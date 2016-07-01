@@ -39,6 +39,21 @@ object makeAnUncaller {
   "
   
   to getMinimalUncallers() :List[Uncaller] { return minimalUncallers }
+  to getDefaultUncallers() :List[Uncaller] { return defaultUncallers }
+
+  to makeAmplifier(unsealer) :Uncaller {
+    object amplifier {
+      to Uncall(obj) :NullOk[Portrayal] {
+        if (unsealer.unseal(obj) =~ [result]) {
+          return result
+        } else {
+          return null
+        }
+      }
+    }
+    return amplifier
+  }
+  
 }
 
 return makeAnUncaller
