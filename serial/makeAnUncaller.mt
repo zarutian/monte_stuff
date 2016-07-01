@@ -53,6 +53,21 @@ object makeAnUncaller {
     }
     return amplifier
   }
+  to onlySelfless(baseUncallers) :Uncaller {
+    object onlySelflessUncaller {
+      to Uncall(obj) :NullOk[Portrayal] {
+        if (Ref.isSelfless(obj)) {
+          for baseUncaller in baseUncallers {
+            if (baseUncaller.Uncall(obj) =~ result :notNull) {
+              return result
+            }
+          }
+        }
+        return null
+      }
+    }
+    return onlySelflessUncaller
+  }
   
 }
 
