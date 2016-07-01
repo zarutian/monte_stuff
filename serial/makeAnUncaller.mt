@@ -1,4 +1,5 @@
-throw ("Not yet implemented"); # this will be removed later
+
+ # is an import require for the guards NullOk and notNull ?
 
 import "serial/makeRemoteCall" =~ [=> makeRemoteCall]
 import "serial/guards/Portrayal" =~ [=> Portrayal]
@@ -22,9 +23,14 @@ object importer {
     throw("To Be Determined")
   }
 }
+object typer {
+  to Uncall(obj) :NullOk[Portrayal] {
+    throw("To Be Determined")
+  }
+}
 
 def minimalUncallers := [minimalUncaller, importer]
-def defaultUncallers := minimalUncallers.with(type); # and how is this going to work?
+def defaultUncallers := minimalUncallers.with(typer); # and how is this going to work?
 
 object makeAnUncaller {
   "
