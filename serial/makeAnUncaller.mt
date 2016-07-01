@@ -13,4 +13,11 @@ object minimalUncaller {
     }
   }
 }
-    
+
+object importer {
+  to Uncall(obj) :NullOk[Portrayal] {
+    throw("To Be Determined")
+  }
+}
+
+def minimalUncallers := [minimalUncaller, importer]
