@@ -4,7 +4,7 @@ import "serial/importer" =~ [=> importer]
 export(makeCryptobrand)
 
 def quine := `
-def quine := "$quine"
+def quine_str := "$quine"
 def cryptobrands := [].asMap().diverge()
 object makeCryptobrand {
   to run(brandName :Str) {
@@ -14,7 +14,17 @@ object makeCryptobrand {
     def box2thing := makeEphimeronTable()
     
     var [pubKey, privKey] := [initPubKey, initPrivKey]
-    
+    def initCryptoKeys() {}
+    def serializeAndEncrypt(thing) {
+      if (pubKey == null) {
+        throw("no public key aviable!")
+      }
+      # ófullgert
+    }
+    def decryptAndDeserialize(encryptedDepictionWithExits :List) {
+      def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExits
+      # ófullgert
+    }
     
     object sealer {
       to run(thing :Any) :Any {
@@ -84,7 +94,7 @@ object makeCryptobrand {
     return cryptobrands[brandName].getUnsealer()
   }
   to makeBox (brandName :Str, encryptedDepictionWithExits :List) {
-    def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExists
+    def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExits
     object box {
       to encrypted :Bool {
         return true
@@ -101,7 +111,7 @@ object makeCryptobrand {
   to _uncall () :Any {
     object q {
       to _uncall() {
-        return [simple, "valueMaker", [quine], [].asMap()]
+        return [simple, "valueMaker", [quine_str], [].asMap()]
       }
     }
     return [eval, "run", [q, safeScope], [].asMap()]
