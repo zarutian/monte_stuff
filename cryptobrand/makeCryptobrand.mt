@@ -3,8 +3,9 @@ import "tables/makeEphimeronTable" =~ [=> makeEphimeronTable]
 import "serial/importer" =~ [=> importer]
 export(makeCryptobrand)
 
-def quine := "
-def quine := \"$quine\"
+def quine := `
+def quine := "$quine"
+def cryptobrands := [].asMap().diverge()
 object makeCryptobrand {
   to run(brandName :Str) {
     return run(brandName, null, null)
@@ -43,12 +44,38 @@ object makeCryptobrand {
       }
     }
     
+    object privateAccessor {
+      to getSealer()    :Any  { return sealer }
+      to getUnsealer()  :Any  { return unsealer }
+      to putPubkey(pk)  :Void { pubKey := pk }
+      to putPrivkey(pk) :Void { privKey := pk }
+    }
+    cryptobrands[brandName] = privateAccessor
+    
     return [sealer, unsealer]
+  }
+  to makeSealer (brandName :Str, pubKey) {
+    if (cryptobrands[brandName] == null) {
+      makeCryptobrand(brandName, pubKey, null)
+    } else {
+      cryptobrands[brandName].putPubkey(pubKey)
+    }
+    return cryptobrands[brandName].getSealer()
+  }
+  to makeUnsealer (brandName :Str, privKey) {
+    if (cryptobrands[brandName] == null) {
+      makeCryptobrand(brandName, null, privKey)
+    } else {
+      cryptobrands[brandName].putPrivkey(privKey)
+    }
+    return cryptobrands[brandName].getUnsealer()
+  }
+  to makeBox (brandName :Str, encryptedDepiction :Bytes) {
   }
   to _uncall () :Any {
   
   }
-}"
+}`
 
 eval(quine, safeScope)
 return makeCryptobrand
