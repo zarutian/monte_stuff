@@ -14,7 +14,12 @@ object makeCryptobrand {
     def box2thing := makeEphimeronTable()
     
     var [pubKey, privKey] := [initPubKey, initPrivKey]
-    def initCryptoKeys() {}
+    def initCryptoKeys() :Void {
+      if ((pubKey != null) || (privKey != null)) {
+        return
+      }
+      
+    }
     def serializeAndEncrypt(thing) {
       if (pubKey == null) {
         throw("no public key aviable!")
@@ -23,6 +28,9 @@ object makeCryptobrand {
     }
     def decryptAndDeserialize(encryptedDepictionWithExits :List) {
       def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExits
+      if (privKey == null) {
+        throw("no private key aviable!")
+      }
       # ófullgert
     }
     
