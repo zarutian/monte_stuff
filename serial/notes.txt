@@ -6,4 +6,4 @@ https://github.com/kpreid/caja-captp
 https://gist.github.com/zarutian/fb21d0a8c910ab255401
 https://github.com/kpreid/e-on-java/tree/master/src/esrc/org/erights/e/elib/serial
 
-
+Should I add a kit for Java Object Serialization Stream (v2)?
