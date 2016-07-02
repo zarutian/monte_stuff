@@ -58,6 +58,24 @@ object deBytecodeKit {
         dos.writeByte(OP_IBID)
         dos.writeWholeNum(tempIndex)
       }
+      to buildCall(recipiant :Any, verb :String, args :List[Void]) :Void {
+        dos.writeByte(OP_CALL)
+        dos.writeUTF(verb)
+        dos.writeWholeNum(args.size())
+      }
+      to buildDefine(_) :Tuple[Void, Int] {
+        def tempIndex := nextTemp
+        nextTemp += 1
+        dos.writeByte(OP_DEFINE)
+        return [null, tempIndex]
+      }
+      to buildPromise() :Int {
+        def promIndex := nextTemp
+        def resIndex := promIndex + 1
+        nextTemp += 2
+        dos.writeByte(OP_PROMISE)
+        return promIndex
+      }
     }
     return deBytecodeBuilder
   }
