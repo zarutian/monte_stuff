@@ -76,6 +76,10 @@ object deBytecodeKit {
         dos.writeByte(OP_PROMISE)
         return promIndex
       }
+      to buildDefrec(resIndex :Int, _) :Void {
+        dos.writeByte(OP_DEFREC)
+        dos.writeWholeNum(resIndex)
+      }
     }
     return deBytecodeBuilder
   }
