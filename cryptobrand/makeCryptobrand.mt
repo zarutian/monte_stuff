@@ -12,11 +12,16 @@ object makeCryptobrand {
   }
   to run(brandName :Str, initPubKey :NullOk[Any], initPrivKey :NullOk[Any]) {
     def box2thing := makeEphimeronTable()
+    
     var [pubKey, privKey] := [initPubKey, initPrivKey]
+    
     
     object sealer {
       to run(thing :Any) :Any {
         object box {
+          to encrypted() :Bool {
+            return false
+          }
           to _uncall() :Any {
             initCryptokeys()
             return [makeCryptobrand, "makeBox", [brandName, serializeAndEncrypt(box2thing[box])], [].asMap()]
@@ -36,7 +41,15 @@ object makeCryptobrand {
     
     object unsealer {
       to run(box) :Any {
-        return box2thing[box]
+        if (box.encrypted()) {
+          def [_, verb, [bn, encryptedDepictionWithExits], _] := box._uncall()
+          if (bn != brandName) {
+            throw(`not an encrypted box of cryptobrand $brandName`)
+          }
+          return decryptAndDeserialize(encryptedDepictionWithExits)
+        } else {
+          return box2thing[box]
+        }
       }
       to _uncall() :Any {
         initCryptokeys()
@@ -73,8 +86,11 @@ object makeCryptobrand {
   to makeBox (brandName :Str, encryptedDepictionWithExits :List) {
     def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExists
     object box {
+      to encrypted :Bool {
+        return true
+      }
       to _uncall() {
-        return [makeCryptobrand, "makeBox", [brandName, encryptedDepictionWithExists, [].asMap()]
+        return [makeCryptobrand, "makeBox", [brandName, encryptedDepictionWithExits], [].asMap()]
       }
       to _printOn(printer) {
         printer.print("<Encrypted Box of $brand cryptobrand>")
