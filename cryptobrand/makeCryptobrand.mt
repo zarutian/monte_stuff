@@ -22,7 +22,7 @@ object makeCryptobrand {
             return [makeCryptobrand, "makeBox", [brandName, serializeAndEncrypt(box2thing[box])], [].asMap()]
           }
           to _printOn(printer) {
-            printer.print("<Box of $brand>")
+            printer.print("<Box of $brand cryptobrand>")
           }
         }
         box2thing[box] := thing
@@ -70,12 +70,27 @@ object makeCryptobrand {
     }
     return cryptobrands[brandName].getUnsealer()
   }
-  to makeBox (brandName :Str, encryptedDepiction :Bytes) {
+  to makeBox (brandName :Str, encryptedDepictionWithExits :List) {
+    def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExists
+    object box {
+      to _uncall() {
+        return [makeCryptobrand, "makeBox", [brandName, encryptedDepictionWithExists, [].asMap()]
+      }
+      to _printOn(printer) {
+        printer.print("<Encrypted Box of $brand cryptobrand>")
+      }
+    }
+    return box
   }
   to _uncall () :Any {
-  
+    object q {
+      to _uncall() {
+        return [simple, "valueMaker", [quine], [].asMap()]
+      }
+    }
+    return [eval, "run", [q, safeScope], [].asMap()]
   }
 }`
 
-eval(quine, safeScope)
+eval(quine.substitute([=>quine]), safeScope)
 return makeCryptobrand
