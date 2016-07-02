@@ -1,11 +1,16 @@
 
-import "tables/makeEphimeronTable" =~ [=> makeEphimeronTable]
-import "serial/importer" =~ [=> importer]
+import "tables/makeEphimeronTable" =~ [=> makeEphimeronTable_original]
+import "serial/importer" =~ [=> importer_original]
 export(makeCryptobrand)
 
 def quine := `
+def importer := $importer_original
+def makeEphimeronTable := importer("tables/makeEphimeronTable")
+def keyMaker           := importer("crypt").keyMaker
 def quine_str := "$quine"
+
 def cryptobrands := [].asMap().diverge()
+
 object makeCryptobrand {
   to run(brandName :Str) {
     return run(brandName, null, null)
@@ -18,7 +23,7 @@ object makeCryptobrand {
       if ((pubKey != null) || (privKey != null)) {
         return
       }
-      
+      [pubKey, privKey] := keyMaker()
     }
     def serializeAndEncrypt(thing) {
       if (pubKey == null) {
@@ -53,7 +58,12 @@ object makeCryptobrand {
       }
       to _uncall() :Any {
         initCryptokeys()
-        return [makeCryptobrand, "makeSealer", [brandName, pubKey], [].asMap()]
+        object pK {
+          to _uncall() {
+            return [makeList, "run", ["sodium_publickey", pubKey[0].asBytes(), pubKey[1].asBytes()], [].asMap()]
+          }
+        }
+        return [makeCryptobrand, "makeSealer", [brandName, pK], [].asMap()]
       }
     }
     
@@ -71,7 +81,10 @@ object makeCryptobrand {
       }
       to _uncall() :Any {
         initCryptokeys()
-        return [makeCryptobrand, "makeUnsealer", [brandName, privKey], [].asMap()]
+        object pK {
+          to _uncall() {
+            return [makeList, "run", ["sodium_privatekey", privKey[0].asBytes(), privKey[1].asBytes()], [].asMap()]
+        return [makeCryptobrand, "makeUnsealer", [brandName, pK], [].asMap()]
       }
     }
     
