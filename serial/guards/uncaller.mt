@@ -3,6 +3,9 @@ export(Uncaller)
 
 object Uncaller {
   to coerce(specimen, ejector) {
+    if (!Ref.isNear(specimen)) {
+      throw.eject(ejector, `$specimen is not Near`)
+    }
     if (specimen._respondsTo("Uncall", 1)) {
       return specimen
     } else {
