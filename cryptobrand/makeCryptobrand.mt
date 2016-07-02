@@ -23,7 +23,10 @@ object makeCryptobrand {
       if ((pubKey != null) || (privKey != null)) {
         return
       }
-      [pubKey, privKey] := keyMaker()
+      def [pubK1, privK1] := keyMaker(); # encryption keypair
+      def [pubK2, privK2] := keyMaker(); # authentication keypair
+      pubKey  := ["sodium_publickey", pubK1.asBytes(), privK2.asBytes()]
+      privKey := ["sodium_privatekey", privK1.asBytes(), pubK2.asBytes()]
     }
     def serializeAndEncrypt(thing) {
       if (pubKey == null) {
@@ -58,12 +61,7 @@ object makeCryptobrand {
       }
       to _uncall() :Any {
         initCryptokeys()
-        object pK {
-          to _uncall() {
-            return [makeList, "run", ["sodium_publickey", pubKey[0].asBytes(), pubKey[1].asBytes()], [].asMap()]
-          }
-        }
-        return [makeCryptobrand, "makeSealer", [brandName, pK], [].asMap()]
+        return [makeCryptobrand, "makeSealer", [brandName, pubKey], [].asMap()]
       }
     }
     
@@ -81,10 +79,7 @@ object makeCryptobrand {
       }
       to _uncall() :Any {
         initCryptokeys()
-        object pK {
-          to _uncall() {
-            return [makeList, "run", ["sodium_privatekey", privKey[0].asBytes(), privKey[1].asBytes()], [].asMap()]
-        return [makeCryptobrand, "makeUnsealer", [brandName, pK], [].asMap()]
+        return [makeCryptobrand, "makeUnsealer", [brandName, privKey], [].asMap()]
       }
     }
     
