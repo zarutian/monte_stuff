@@ -32,7 +32,18 @@ object makeCryptobrand {
       if (pubKey == null) {
         throw("no public key aviable!")
       }
-      # ófullgert
+      
+      def surgeon := theSurgeon.diverge()
+      def exits := [].diverge()
+      # need an uncaller at the bottom of the uncallers list,
+      # that uncaller just adds things that cant be serialized by
+      # this surgeon as depiction graph exits
+      def depiction := surgeon.serialize(thing)
+      
+      def pubK1  := keyMaker.fromPublicBytes(pubKey[1])
+      def privK2 := keyMaker.fromSecretBytes(pubKey[2])
+      def keypair := privK2.pairWith(pubK1)
+      return [keypair.seal(depiction), exits]
     }
     def decryptAndDeserialize(encryptedDepictionWithExits :List) {
       def [encryptedDepiction :Bytes, depictionExists :Map[Str, Any]] := encryptedDepictionWithExits
