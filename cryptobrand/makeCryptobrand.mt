@@ -77,7 +77,7 @@ object makeCryptobrand {
       
       def depiction := keypair.unseal(encryptedDepiction[0], encryptedDepiction[1])
       
-      def fromDepictionExits := depictionExits.flipAround()
+      def fromDepictionExits := [for k => v in (depictionExits) v => k]
       def surgeon := theSurgeon.diverge()
       object gunga_loader {
         to run(id) {
