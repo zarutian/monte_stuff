@@ -34,7 +34,7 @@ object makeCryptobrand {
           }
           to _uncall() :Any {
             initCryptokeys()
-            return [makeCryptobrand, "makeBox", [brandName, serializeAndEncrypt(box2thing[box])], [].asMap()]
+            return [makeCryptobrand, "makeBox", [brandName, serializeAndEncrypt(thing)], [].asMap()]
           }
           to _printOn(printer) {
             printer.print("<Box of $brand cryptobrand>")
