@@ -7,6 +7,9 @@ def quine := `
 def importer := $importer_original
 def makeEphimeronTable := importer("tables/makeEphimeronTable")
 def keyMaker           := importer("crypt").keyMaker
+def makeSurgeon        := importer("serial/makeSurgeon")
+
+def theSurgeon         := makeSurgeon("uncallers" => minimalUncallers).snapshot()
 def quine_str := "$quine"
 
 def cryptobrands := [].asMap().diverge()
@@ -37,17 +40,21 @@ object makeCryptobrand {
       def exits := [].asMap().diverge()
       var count := 0
       # need an uncaller at the bottom of the uncallers list,
-      # that uncaller just adds things that cant be serialized by
-      # this surgeon as depiction graph exits
-      
-      # look into <opaque>
+      # that uncaller just adds things that cant be serialized by this surgeon
+      # note: this can accidentally defeat the whole purpose of this cryptobrand
+      object gunga_loader; # purely used as marker
+      surgeon.addExit(gunga_loader, "gunga_loader")
       object gunga {
         to Uncall(specimen :Any) :Any {
-          def name := "internal_exit" + counter
-          counter += 1
-          surgeon.addExit(specimen, name)
-          exits[name] := specimen
-          return surgeon.serialize(specimen)
+          var name := ""
+          if (exits[specimen] == null) {
+            name := "ie" + counter
+            counter += 1
+            exits[specimen] := name
+          } else {
+            name = exits[specimen]
+          }
+          return [gunga_loader, "run", [name], [].asMap()]
         }
       }
       surgeon.addLastUncaller(gunga)
@@ -59,7 +66,7 @@ object makeCryptobrand {
       return [keypair.seal(depiction), exits]
     }
     def decryptAndDeserialize(encryptedDepictionWithExits :List) {
-      def [encryptedDepiction :List, depictionExits :Map[Str, Any]] := encryptedDepictionWithExits
+      def [encryptedDepiction :List, depictionExits :Map[Any, Str]] := encryptedDepictionWithExits
       if (privKey == null) {
         throw("no private key aviable!")
       }
@@ -70,8 +77,14 @@ object makeCryptobrand {
       
       def depiction := keypair.unseal(encryptedDepiction[0], encryptedDepiction[1])
       
+      def fromDepictionExits := depictionExits.flipAround()
       def surgeon := theSurgeon.diverge()
-      # add in the exits
+      object gunga_loader {
+        to run(id) {
+          return fromDepictionExits[id]
+        }
+      }
+      surgeon.addExit(gunga_loader, "gunga_loader")
       return surgeon.deserialize(depiction)
     }
     
