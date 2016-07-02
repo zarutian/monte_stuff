@@ -11,17 +11,25 @@ object makeCryptobrand {
   }
   to run(brandName :Str, initPubKey :NullOk[Any], initPrivKey :NullOk[Any]) {
     def box2thing := makeEphimeronTable()
+    var [pubKey, privKey] := [initPubKey, initPrivKey]
     
     object sealer {
       to run(thing :Any) :Any {
         object box {
-          to _uncall() :Any {}
+          to _uncall() :Any {
+            initCryptokeys()
+            return [makeCryptobrand, "makeBox", [brandName, serializeAndEncrypt(box2thing[box])], [].asMap()]
+          }
           to _printOn(printer) {
             printer.print("<Box of $brand>")
           }
         }
         box2thing[box] := thing
         return box
+      }
+      to _uncall() :Any {
+        initCryptokeys()
+        return [makeCryptobrand, "makeSealer", [brandName, pubKey], [].asMap()]
       }
     }
     
@@ -30,7 +38,8 @@ object makeCryptobrand {
         return box2thing[box]
       }
       to _uncall() :Any {
-        # to be fleshed out
+        initCryptokeys()
+        return [makeCryptobrand, "makeUnsealer", [brandName, privKey], [].asMap()]
       }
     }
     
