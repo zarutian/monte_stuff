@@ -1,4 +1,7 @@
-import "serial/streams" =~ [ => DataOutputStream, => ]
+import "serial/streams" =~ [ => DataOutputStream, 
+                             => DataInputStream,
+                             => makeByteArrayInputStream,
+                             => makeDataInputStream]
 export(deBytecodeKit)
 
 def OP_ROOT         := 1
