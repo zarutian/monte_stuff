@@ -1,3 +1,5 @@
+import "serial/streams" =~ [ => DataOutputStream, => ]
+export(deBytecodeKit)
 
 def OP_ROOT         := 1
 def OP_LIT_WHOLENUM := 2
@@ -82,6 +84,16 @@ object deBytecodeKit {
       }
     }
     return deBytecodeBuilder
+  }
+  
+  to recognize(depiction :Bytes, builder) :(builder.getRootType()) {
+    def bais := makeByteArrayInputStream(depiction)
+    def dis := makeDataInputStream(bais)
+    deBytecodeKit.recognizeStream(dis, builder)
+  }
+  
+  to recognizeStream(dis :DataInputStream, builder) :(builder.getRootType()) {
+    # to be filled in
   }
 }
 return deBytecodeKit
