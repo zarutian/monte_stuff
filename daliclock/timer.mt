@@ -1,5 +1,6 @@
 
-# Because 'time' here in this context is elastic and that reminded me of that Dali painting "Time, the and Water, the" (ísl nafn: "Tíminn og vatnið") 
+# Because 'time' here in this context is elastic and that reminded me 
+# of that Dali painting "Time, the and Water, the" (ísl nafn: "Tíminn og vatnið") 
 
 export(makeDaliTimer)
 
