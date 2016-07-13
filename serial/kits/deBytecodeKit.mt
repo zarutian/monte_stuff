@@ -4,6 +4,19 @@ import "serial/streams" =~ [ => DataOutputStream,
                              => makeDataInputStream]
 export(deBytecodeKit)
 
+object deBytecodeMachine {
+  to getStateGuard () :Any {
+    return Any
+  }
+  to getInitialState () :Any {
+    object init_state {}
+    return [init_state, 1]
+  }
+  to advance (prior_state, data) :Any {
+    return [newState, newSize]
+  }
+}
+
 def OP_ROOT         := 1
 def OP_LIT_WHOLENUM := 2
 def OP_LIT_NEGINT   := 3
