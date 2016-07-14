@@ -19,27 +19,37 @@ def OP_DEFINE       := 10
 def OP_PROMISE      := 11
 def OP_DEFREC       := 12
 
-def do_OP
-hide {
-  var tmp := [].asMap().diverge()
-  def tmp[0] (state, data) :stateAndInt {
-    throw("not implemented error")
+def got_OP_byte (state, byte) :stateAndInt {
+  var newSize := 1
+  state["continuation_rstack"].push(get_OP_byte)
+  switch (byte) {
+    match ==OP_ROOT {
+      state["continuation_rstack"].push(done)
+      state["continuation"] := pop_ROOT
+    }
+    match ==OP_LIT_WHOLENUM {
+      state["continuation_rstack"].push(push_LIT_WHOLENUM)
+      state["continuation"] := accumulate_WHOLENUM
+    }
+    match ==OP_LIT_NEGINT {
+      state["continuation_rstack"].push(push_LIT_NEGINT)
+      state["continuation"] := accumulate_WHOLENUM
+    }
+    match ==OP_LIT_FLOAT64 {
+      state["continuation"] := push_LIT_FLOAT64
+      newSize := 8
+    }
+    match ==OP_LIT_CHAR {
+      state["continuation"] := push_LIT_CHAR
+    }
+    match ==OP_LIT_STRING {
+      state["continuation_rstack"].push(push_LIT_STRING)
+      state["continuation_rstack"].push(read_UTF_bytes)
+      state["continuation"] := read_a_Short
+      newSize := 2
+    }
   }
-  def tmp[OP_ROOT]         (state, data) :stateAndInt {}
-  def tmp[OP_LIT_WHOLENUM] (state, data) :stateAndInt {}
-  def tmp[OP_LIT_NEGINT]   (state, data) :stateAndInt {}
-  def tmp[OP_LIT_FLOAT64]  (state, data) :stateAndInt {}
-  def tmp[OP_LIT_CHAR]     (state, data) :stateAndInt {}
-  def tmp[OP_LIT_STRING]   (state, data) :stateAndInt {}
-  def tmp[OP_IMPORT]       (state, data) :stateAndInt {}
-  def tmp[OP_IBID]         (state, data) :stateAndInt {}
-  def tmp[OP_CALL]         (state, data) :stateAndInt {}
-  def tmp[OP_DEFINE]       (state, data) :stateAndInt {}
-  def tmp[OP_PROMISE]      (state, data) :stateAndInt {}
-  def tmp[OP_DEFREC]       (state, data) :stateAndInt {}
-  
-  
-  bind do_OP tmp
+  return [state, newSize]
 }
 
 object deBytecodeMachine {
@@ -48,14 +58,16 @@ object deBytecodeMachine {
   }
   to getInitialState () :stateAndInt {
     def init_state := [].asMap().diverge()
-    init_state["status"] := "getting_op_byte"
+    init_state["continuation"] := got_OP_byte
+    init_state["continuation_rstack"] := [].diverge()
+    init_state["continuation_pstack"] := [].diverge()
     return [init_state, 1]
   }
-  to advance (prior_state, data) :Any {
-    var newState := prior_state
-    var newSize := 0
-    
-    return [newState, newSize]
+  to advance (prior_state, data) :stateAndInt {
+    return prior_state["continuation"](prior_state, data)
+  }
+  to results() :Any {
+  
   }
 }
 
