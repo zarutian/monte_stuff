@@ -4,18 +4,7 @@ import "serial/streams" =~ [ => DataOutputStream,
                              => makeDataInputStream]
 export(deBytecodeKit)
 
-object deBytecodeMachine {
-  to getStateGuard () :Any {
-    return Any
-  }
-  to getInitialState () :Any {
-    object init_state {}
-    return [init_state, 1]
-  }
-  to advance (prior_state, data) :Any {
-    return [newState, newSize]
-  }
-}
+def stateAndInt := Tuple[Any, Int]
 
 def OP_ROOT         := 1
 def OP_LIT_WHOLENUM := 2
@@ -29,6 +18,48 @@ def OP_CALL         := 9
 def OP_DEFINE       := 10
 def OP_PROMISE      := 11
 def OP_DEFREC       := 12
+
+def do_OP
+hide {
+  var tmp := [].asMap().diverge()
+  def tmp[0] (state, data) :stateAndInt {
+    throw("not implemented error")
+  }
+  def tmp[OP_ROOT]         (state, data) :stateAndInt {}
+  def tmp[OP_LIT_WHOLENUM] (state, data) :stateAndInt {}
+  def tmp[OP_LIT_NEGINT]   (state, data) :stateAndInt {}
+  def tmp[OP_LIT_FLOAT64]  (state, data) :stateAndInt {}
+  def tmp[OP_LIT_CHAR]     (state, data) :stateAndInt {}
+  def tmp[OP_LIT_STRING]   (state, data) :stateAndInt {}
+  def tmp[OP_IMPORT]       (state, data) :stateAndInt {}
+  def tmp[OP_IBID]         (state, data) :stateAndInt {}
+  def tmp[OP_CALL]         (state, data) :stateAndInt {}
+  def tmp[OP_DEFINE]       (state, data) :stateAndInt {}
+  def tmp[OP_PROMISE]      (state, data) :stateAndInt {}
+  def tmp[OP_DEFREC]       (state, data) :stateAndInt {}
+  
+  
+  bind do_OP tmp
+}
+
+object deBytecodeMachine {
+  to getStateGuard () :Any {
+    return Any
+  }
+  to getInitialState () :stateAndInt {
+    def init_state := [].asMap().diverge()
+    init_state["status"] := "getting_op_byte"
+    return [init_state, 1]
+  }
+  to advance (prior_state, data) :Any {
+    var newState := prior_state
+    var newSize := 0
+    
+    return [newState, newSize]
+  }
+}
+
+
 
 object deBytecodeKit {
   to makeBuilder () :Near {
