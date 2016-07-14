@@ -32,6 +32,15 @@ def read_WHOLENUM (state, byte) :stateAndInt {
     return [state, 1]
   }
 }
+def read_UTF_length (state, bytes) :stateAndInt {
+  state["continuation"] := state["continuation_rstack"].pop()
+  return [state, bytes.asInt()]
+}
+def read_UTF_bytes (state, bytes) :stateAndInt {
+  state["continuation_pstack"].push(bytes.asUTF())
+  def returned_to := state["continuation_rstack"].pop()
+  return returned_to(state, b``)
+}
 
 def got_OP_byte (state, byte) :stateAndInt {
   var newSize := 1
@@ -61,13 +70,13 @@ def got_OP_byte (state, byte) :stateAndInt {
     match ==OP_LIT_STRING {
       state["continuation_rstack"].push(push_LIT_STRING)
       state["continuation_rstack"].push(read_UTF_bytes)
-      state["continuation"] := read_a_Short
+      state["continuation"] := read_UTF_length
       newSize := 2
     }
     match ==OP_IMPORT {
       state["continuation_rstack"].push(push_IMPORT)
       state["continuation_rstack"].push(read_UTF_bytes)
-      state["continuation"] := read_a_Short
+      state["continuation"] := read_UTF_length
       newSize := 2
     }
     match ==OP_IBID {
@@ -80,7 +89,7 @@ def got_OP_byte (state, byte) :stateAndInt {
       state["continuation_rstack"].push(read_WHOLENUM)
       state["continuation_rstack"].push(read_UTF_bytes)
       state["last_WHOLENUM"] := 0
-      state["continuation"] := read_a_Short
+      state["continuation"] := read_UTF_length
       newSize := 2
     }
     match ==OP_DEFINE {
