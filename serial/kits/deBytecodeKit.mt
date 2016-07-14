@@ -28,6 +28,8 @@ def read_WHOLENUM (state, byte) :stateAndInt {
   if (done?) {
     def returned_to := state["continuation_rstack"].pop()
     return returned_to(state, b``)
+  } else {
+    return [state, 1]
   }
 }
 
