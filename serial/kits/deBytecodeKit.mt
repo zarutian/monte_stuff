@@ -19,20 +19,34 @@ def OP_DEFINE       := 10
 def OP_PROMISE      := 11
 def OP_DEFREC       := 12
 
-def got_OP_byte__proc (state, byte) :stateAndInt {
+def done (state, byte) :stateAndInt { return [state, 0] }
+
+def read_WHOLENUM (state, byte) :stateAndInt {
+  def done? := ((byte & 0x80) != 0x80)
+  def value := (byte & 0x7ff)
+  state["last_WHOLENUM"] := (state["last_WHOLENUM"] << 7) + value
+  if (done?) {
+    def returned_to := state["continuation_rstack"].pop()
+    return returned_to(state, b``)
+  }
+}
+
+def got_OP_byte (state, byte) :stateAndInt {
   var newSize := 1
   state["continuation_rstack"].push(get_OP_byte)
   switch (byte) {
     match ==OP_ROOT {
       state["continuation_rstack"].push(done)
-      state["continuation"] := pop_ROOT
+      return pop_ROOT(state, b``)
     }
     match ==OP_LIT_WHOLENUM {
       state["continuation_rstack"].push(push_LIT_WHOLENUM)
+      state["last_WHOLENUM"] := 0
       state["continuation"] := read_WHOLENUM
     }
     match ==OP_LIT_NEGINT {
       state["continuation_rstack"].push(push_LIT_NEGINT)
+      state["last_WHOLENUM"] := 0
       state["continuation"] := read_WHOLENUM
     }
     match ==OP_LIT_FLOAT64 {
@@ -56,23 +70,26 @@ def got_OP_byte__proc (state, byte) :stateAndInt {
     }
     match ==OP_IBID {
       state["continuation_rstack"].push(push_IBID)
+      state["last_WHOLENUM"] := 0
       state["continuation"] := read_WHOLENUM
     }
     match ==OP_CALL {
       state["continuation_rstack"].push(do_a_Call)
       state["continuation_rstack"].push(read_WHOLENUM)
       state["continuation_rstack"].push(read_UTF_bytes)
+      state["last_WHOLENUM"] := 0
       state["continuation"] := read_a_Short
       newSize := 2
     }
     match ==OP_DEFINE {
-      # do an define
+      return do_a_define(state, b``)
     }
     match ==OP_PROMISE {
-      # make an promise
+      return make_a_promise(state, b``)
     }
     match ==OP_DEFREC {
       state["continuation_rstack"].push(do_a_DEFREC)
+      state["last_WHOLENUM"] := 0
       state["continuation"] := read_WHOLENUM
     }
     match :Any {
