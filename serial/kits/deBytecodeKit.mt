@@ -19,7 +19,7 @@ def OP_DEFINE       := 10
 def OP_PROMISE      := 11
 def OP_DEFREC       := 12
 
-def got_OP_byte (state, byte) :stateAndInt {
+def got_OP_byte__proc (state, byte) :stateAndInt {
   var newSize := 1
   state["continuation_rstack"].push(get_OP_byte)
   switch (byte) {
@@ -29,11 +29,11 @@ def got_OP_byte (state, byte) :stateAndInt {
     }
     match ==OP_LIT_WHOLENUM {
       state["continuation_rstack"].push(push_LIT_WHOLENUM)
-      state["continuation"] := accumulate_WHOLENUM
+      state["continuation"] := read_WHOLENUM
     }
     match ==OP_LIT_NEGINT {
       state["continuation_rstack"].push(push_LIT_NEGINT)
-      state["continuation"] := accumulate_WHOLENUM
+      state["continuation"] := read_WHOLENUM
     }
     match ==OP_LIT_FLOAT64 {
       state["continuation"] := push_LIT_FLOAT64
@@ -47,6 +47,36 @@ def got_OP_byte (state, byte) :stateAndInt {
       state["continuation_rstack"].push(read_UTF_bytes)
       state["continuation"] := read_a_Short
       newSize := 2
+    }
+    match ==OP_IMPORT {
+      state["continuation_rstack"].push(push_IMPORT)
+      state["continuation_rstack"].push(read_UTF_bytes)
+      state["continuation"] := read_a_Short
+      newSize := 2
+    }
+    match ==OP_IBID {
+      state["continuation_rstack"].push(push_IBID)
+      state["continuation"] := read_WHOLENUM
+    }
+    match ==OP_CALL {
+      state["continuation_rstack"].push(do_a_Call)
+      state["continuation_rstack"].push(read_WHOLENUM)
+      state["continuation_rstack"].push(read_UTF_bytes)
+      state["continuation"] := read_a_Short
+      newSize := 2
+    }
+    match ==OP_DEFINE {
+      # do an define
+    }
+    match ==OP_PROMISE {
+      # make an promise
+    }
+    match ==OP_DEFREC {
+      state["continuation_rstack"].push(do_a_DEFREC)
+      state["continuation"] := read_WHOLENUM
+    }
+    match :Any {
+      throw("error text still in TBD")
     }
   }
   return [state, newSize]
