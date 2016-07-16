@@ -1,10 +1,5 @@
-import "serial/streams" =~ [ => DataOutputStream, 
-                             => DataInputStream,
-                             => makeByteArrayInputStream,
-                             => makeDataInputStream]
-export(deBytecodeKit)
-
-def stateAndInt := Tuple[Any, Int]
+import "lib/tubes" => [ => Drain ]
+exports(deBytecodeKit)
 
 def OP_ROOT         := 1
 def OP_LIT_WHOLENUM := 2
@@ -19,7 +14,6 @@ def OP_DEFINE       := 10
 def OP_PROMISE      := 11
 def OP_DEFREC       := 12
 
-def done (state, byte) :stateAndInt { return [state, 0] }
 
 def read_WHOLENUM (state, byte) :stateAndInt {
   def done? := ((byte & 0x80) != 0x80)
