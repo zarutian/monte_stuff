@@ -1,4 +1,4 @@
-import "lib/tubes" => [ => Drain ]
+import "lib/tubes" => [ => Fount, => Drain ]
 exports(deBytecodeKit)
 
 def OP_ROOT         := 1
@@ -34,93 +34,6 @@ def read_UTF_bytes (state, bytes) :stateAndInt {
   state["continuation_pstack"].push(bytes.asUTF())
   def returned_to := state["continuation_rstack"].pop()
   return returned_to(state, b``)
-}
-
-def got_OP_byte (state, byte) :stateAndInt {
-  var newSize := 1
-  state["continuation_rstack"].push(get_OP_byte)
-  switch (byte) {
-    match ==OP_ROOT {
-      state["continuation_rstack"].push(done)
-      return pop_ROOT(state, b``)
-    }
-    match ==OP_LIT_WHOLENUM {
-      state["continuation_rstack"].push(push_LIT_WHOLENUM)
-      state["last_WHOLENUM"] := 0
-      state["continuation"] := read_WHOLENUM
-    }
-    match ==OP_LIT_NEGINT {
-      state["continuation_rstack"].push(push_LIT_NEGINT)
-      state["last_WHOLENUM"] := 0
-      state["continuation"] := read_WHOLENUM
-    }
-    match ==OP_LIT_FLOAT64 {
-      state["continuation"] := push_LIT_FLOAT64
-      newSize := 8
-    }
-    match ==OP_LIT_CHAR {
-      state["continuation"] := push_LIT_CHAR
-    }
-    match ==OP_LIT_STRING {
-      state["continuation_rstack"].push(push_LIT_STRING)
-      state["continuation_rstack"].push(read_UTF_bytes)
-      state["continuation"] := read_UTF_length
-      newSize := 2
-    }
-    match ==OP_IMPORT {
-      state["continuation_rstack"].push(push_IMPORT)
-      state["continuation_rstack"].push(read_UTF_bytes)
-      state["continuation"] := read_UTF_length
-      newSize := 2
-    }
-    match ==OP_IBID {
-      state["continuation_rstack"].push(push_IBID)
-      state["last_WHOLENUM"] := 0
-      state["continuation"] := read_WHOLENUM
-    }
-    match ==OP_CALL {
-      state["continuation_rstack"].push(do_a_Call)
-      state["continuation_rstack"].push(read_WHOLENUM)
-      state["continuation_rstack"].push(read_UTF_bytes)
-      state["last_WHOLENUM"] := 0
-      state["continuation"] := read_UTF_length
-      newSize := 2
-    }
-    match ==OP_DEFINE {
-      return do_a_define(state, b``)
-    }
-    match ==OP_PROMISE {
-      return make_a_promise(state, b``)
-    }
-    match ==OP_DEFREC {
-      state["continuation_rstack"].push(do_a_DEFREC)
-      state["last_WHOLENUM"] := 0
-      state["continuation"] := read_WHOLENUM
-    }
-    match :Any {
-      throw("error text still in TBD")
-    }
-  }
-  return [state, newSize]
-}
-
-object deBytecodeMachine {
-  to getStateGuard () :Any {
-    return Any
-  }
-  to getInitialState () :stateAndInt {
-    def init_state := [].asMap().diverge()
-    init_state["continuation"] := got_OP_byte
-    init_state["continuation_rstack"] := [].diverge()
-    init_state["continuation_pstack"] := [].diverge()
-    return [init_state, 1]
-  }
-  to advance (prior_state, data) :stateAndInt {
-    return prior_state["continuation"](prior_state, data)
-  }
-  to results() :Any {
-  
-  }
 }
 
 
@@ -197,14 +110,51 @@ object deBytecodeKit {
     return deBytecodeBuilder
   }
   
-  to recognize(depiction :Bytes, builder) :(builder.getRootType()) {
+  to recognize(depiction :Bytes, builder) :Vow[builder.getRootType()] {
     def bais := makeByteArrayInputStream(depiction)
     def dis := makeDataInputStream(bais)
-    deBytecodeKit.recognizeStream(dis, builder)
+    return deBytecodeKit.recognizeStream(dis, builder)
   }
   
-  to recognizeStream(dis :DataInputStream, builder) :(builder.getRootType()) {
-    # to be filled in
+  to recognizeStream(F :Fount[Bytes], builder) :Vow[builder.getRootType()] {
+    def [promise, resolver] := Ref.makePromise()
+    def buffer := b``.diverge()
+    object drain as Drain {
+      to recieve (data :Bytes) {
+        buffer += data
+        do {
+          if (buffer.size() < 1) { return }
+          switch (buffer[0]) {
+            match ==OP_ROOT {
+            }
+            match ==OP_LIT_WHOLENUM {
+            }
+            match ==OP_LIT_NEGINT {
+            }
+            match ==OP_LIT_FLOAT64 {
+            }
+            match ==OP_LIT_CHAR {
+            }
+            match ==OP_LIT_STRING {
+            }
+            match ==OP_IMPORT {
+            }
+            match ==OP_IBID {
+            }
+            match ==OP_CALL {
+            }
+            match ==OP_DEFINE {
+            }
+            match ==OP_PROMISE {
+            }
+            match ==OP_DEFREC {
+            }
+          }
+        } until (buffer.size() == 0)
+      }
+    }
+    F.flowInto(drain)
+    return promise
   }
 }
 return deBytecodeKit
