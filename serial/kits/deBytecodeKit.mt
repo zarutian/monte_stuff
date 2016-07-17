@@ -1,7 +1,7 @@
 import "lib/tubes" =~ [ => Fount, => Drain ]
 import "guards" =~ [ => Tuple, => Nat ]
 import "lib/codec/utf8" =~ [=> UTF8]
-import "serial/streams" =~ [=> DataOutputStream, => makeBytestringOutputStream, => makeDataOutputStream ]
+import "serial/streams" =~ [=> DataOutputStream, => makeBytestringOutputStream, => makeDataOutputStream, => makeBytestringFount ]
 exports(deBytecodeKit)
 
 def OP_ROOT         := 1
@@ -31,14 +31,14 @@ def parse_WHOLENUM (buffer :Bytes) :Tuple[Nat, Any] {
 }
 def parse_UTF8str (buffer :Bytes) :Tuple[Nat, Any] {
   if (buffer.size() < 2) { return [0, null] }
-  def length := (buffer.slice(0, 2)).asInt() ; # a Short in network byte order
+  def length := (buffer.slice(0, 1)).asInt() ; # a Short in network byte order
   if (buffer.size() < 2 + length) { return [0, null] }
-  def string := UTF8.decode(buffer.slice(2, length), null)
+  def string := UTF8.decode(buffer.slice(2, (2 + length)), null)
   return [(2 + length), string]
 }
 def parse_FLOAT64 (buffer :Bytes) :Tuple[Nat, Any] {
   if (buffer.size() < 8) { return [0, null] }
-  return [8, buffer.slice(0, 2).asDouble()]
+  return [8, buffer.slice(0, 7).asDouble()]
 }
 
 
@@ -126,15 +126,14 @@ object deBytecodeKit {
   }
   
   to recognize(depiction :Bytes, builder) :Vow[builder.getRootType()] {
-    def bais := makeByteArrayInputStream(depiction)
-    def dis := makeDataInputStream(bais)
-    return deBytecodeKit.recognizeStream(dis, builder)
+    def fount := makeBytestringFount(depiction)
+    return deBytecodeKit.recognizeStream(fount, builder)
   }
   
   to recognizeStream(F :Fount[Bytes], builder) :Vow[builder.getRootType()] {
     def [root_promise, resolver] := Ref.makePromise()
     def stack := [].diverge()
-    def buffer := b``.diverge()
+    def buffer := b``
     object drain as Drain {
       to recieve (data :Bytes) {
         buffer += data
@@ -148,58 +147,58 @@ object deBytecodeKit {
               def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildLiteral(wholenum))
             }
             match ==OP_LIT_NEGINT {
               def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildLiteral(-wholenum))
             }
             match ==OP_LIT_FLOAT64 {
               def [consumed, slumptala] := parse_FLOAT64(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildLiteral(slumptala))
             }
             match ==OP_LIT_CHAR {
               def [consumed, shady_character] := parse_CHAR(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildLiteral(shady_character))
             }
             match ==OP_LIT_STRING {
               def [consumed, handy_string] := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildLiteral(handy_string))
             }
             match ==OP_IMPORT {
               def [consumed, handy_string] := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildImport(handy_string))
             }
             match ==OP_IBID {
               def [consumed, ibid] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildIbid(ibid))
             }
             match ==OP_CALL {
               def [consumed1, verb]  := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
               if (consumed1 == 0) { return }
-              def [consumed2, arity] := parse_WHOLENUM(buffer.slice((1 + consumed1), (buffer.size() - (1 + consumed1))))
+              def [consumed2, arity] := parse_WHOLENUM(buffer.slice((1 + consumed1), (buffer.size() - 1)))
               if (consumed2 == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed1 + consumed2), (buffer.size() - (1 + consumed1 + consumed2)))
+              buffer := buffer.slice((1 + consumed1 + consumed2), (buffer.size() - 1))
               def stackSize := stack.size()
               def firstArgIndex := stackSize - arity
               def args := stack.removeRun(firstArgIndex, stackSize)
@@ -216,7 +215,7 @@ object deBytecodeKit {
               def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
               # commit point
-              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              buffer := buffer.slice((1 + consumed), (buffer.size() - 1))
               stack.push(builder.buildDefrec(wholenum, stack.pop()))
             }
           }
