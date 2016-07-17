@@ -113,7 +113,16 @@ object msgpckParser {
             if (consumed == 0) { return [0, null] }
             return [consumed + 5, ext]
           }
-          
+          match ==0xCA {
+            # float 32
+            if (buffer.size() < 5) { return [0, null] }
+            return [5, makeFloat32(buffer.slice(1, 4))]
+          }
+          match ==0xCB {
+            # float 64
+            if (buffer.size() < 9) {
+            return [9, makeFloat64(buffer.slice(1, 8))]
+          }
         }
       }
     }
