@@ -1,5 +1,7 @@
 import "lib/tubes" =~ [ => Fount, => Drain ]
 import "guards" =~ [ => Tuple, => Nat ]
+import "lib/codec/utf8" =~ [=> UTF8]
+import "serial/streams" =~ [=> DataOutputStream, => makeBytestringOutputStream, => makeDataOutputStream ]
 exports(deBytecodeKit)
 
 def OP_ROOT         := 1
@@ -28,19 +30,32 @@ def parse_WHOLENUM (buffer :Bytes) :Tuple[Nat, Any] {
   }
 }
 def parse_UTF8str (buffer :Bytes) :Tuple[Nat, Any] {
-  if (buffer.size() >= 2) { return [0, null] }
+  if (buffer.size() < 2) { return [0, null] }
   def length := (buffer.slice(0, 2)).asInt() ; # a Short in network byte order
-  if (buffer.size() >= 2 + length) { return [0, null] }
-  def string := (buffer.slice(2, length)).asUTF8string()
+  if (buffer.size() < 2 + length) { return [0, null] }
+  def string := UTF8.decode(buffer.slice(2, length), null)
   return [(2 + length), string]
 }
-
-
+def parse_FLOAT64 (buffer :Bytes) :Tuple[Nat, Any] {
+  if (buffer.size() < 8) { return [0, null] }
+  return [8, buffer.slice(0, 2).asDouble()]
+}
 
 
 object deBytecodeKit {
   to makeBuilder () :Near {
-  
+    def bsos := makeBytestringOutputStream()
+    def dos := makeDataOutputStream(baos)
+    def subBuilder := deBytecodeKit.makeStreamBuilder(dos)
+    def wrappingBuilder extends subBuilder implements DEBuilderOf(Void, Bytes) {
+      to getRootType() :Near { return Bytes }
+      to buildRoot(root) :Bytes {
+        super.buildRoot(root)
+        dos.close()
+        return bsos.toBytestring()
+      }
+    }
+    return wrappingBulder
   }
   to makeStreamBulder(dos :DataOutputStream) :Near {
     var nextTemp := 0
