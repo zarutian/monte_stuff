@@ -3,10 +3,16 @@ exports(msgpckKit)
 
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
-def makeInteger (bytes) {
+def makeInteger (bytes) :Any {
   return object {
     to kind () { return "msgpck_Integer" }
     to get () { return bytes.asInteger() }
+  }
+}
+def makeNil () :Any {
+  return object {
+    to kind () { return "msgpck_Nil" }
+    to get () { return null }
   }
 }
 
@@ -24,6 +30,12 @@ object msgpckParser {
       } elseif ((buffer[0] & 0xE0) == 0xA0) {
         # fixstr
       } else {
+        switch (buffer[0]) {
+          match ==0xC0 {
+            # nil
+            return [1, makeNil()]
+          }
+        }
       }
     }
   }
