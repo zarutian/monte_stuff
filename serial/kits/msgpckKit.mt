@@ -81,6 +81,14 @@ object msgpckParser {
             if (consumed == 0) { return [0, null] }
             return [consumed + 3, bin]
           }
+          match ==0xC6 {
+            # bin 32
+            if (buffer.size() < 5) { return [0, null] }
+            def numberOfBytes := buffer.slice(1, 4).asInteger()
+            def [consumed, bind] := parseBinary(buffer.slice(5, (buffer.size() - 1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 5, bin]
+          }
         }
       }
     }
