@@ -15,6 +15,12 @@ def makeNil () :Any {
     to get () { return null }
   }
 }
+def makeBool(boolean) :Any {
+  return object {
+    to kind () { return "msgpck_Bool" }
+    to get () { return boolean }
+  }
+}
 
 object msgpckParser {
   to parse (buffer :Bytes) :Tuple[Nat, Any] {
@@ -43,6 +49,20 @@ object msgpckParser {
           match ==0xC0 {
             # nil
             return [1, makeNil()]
+          }
+          match ==0xC1 {
+            # never used
+            throw("error: value tag 0xC1 encountered")
+          }
+          match ==0xC2 {
+            # false
+            return [1, makeBool(false)]
+          }
+          match ==0xC3 {
+            # true
+            return [1, makeBool(true)]
+          }
+          mathc ==0xC4 {
           }
         }
       }
