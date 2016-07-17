@@ -1,4 +1,5 @@
-import "lib/tubes" => [ => Fount, => Drain ]
+import "lib/tubes" =~ [ => Fount, => Drain ]
+import "guards" =~ [ => Tuple, => Nat ]
 exports(deBytecodeKit)
 
 def OP_ROOT         := 1
@@ -15,15 +16,15 @@ def OP_PROMISE      := 11
 def OP_DEFREC       := 12
 
 
-def read_WHOLENUM (state, byte) :stateAndInt {
-  def done? := ((byte & 0x80) != 0x80)
-  def value := (byte & 0x7ff)
-  state["last_WHOLENUM"] := (state["last_WHOLENUM"] << 7) + value
-  if (done?) {
-    def returned_to := state["continuation_rstack"].pop()
-    return returned_to(state, b``)
-  } else {
-    return [state, 1]
+def parse_WHOLENUM (buffer :Bytes) :Tuple[Nat, Any] {
+  var idx := 0
+  var value := 0
+  while (true) {
+    if (idx >= buffer.size()) { return [0, null] }
+    def byte := buffer[idx]
+    value := (value << 7) + (byte & 0x7f)
+    idx += 1
+    if (byte & 0x80) == 0x80) { return [idx, value] }
   }
 }
 def read_UTF_length (state, bytes) :stateAndInt {
