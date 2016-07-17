@@ -117,7 +117,8 @@ object deBytecodeKit {
   }
   
   to recognizeStream(F :Fount[Bytes], builder) :Vow[builder.getRootType()] {
-    def [promise, resolver] := Ref.makePromise()
+    def [root_promise, resolver] := Ref.makePromise()
+    def stack := [].diverge()
     def buffer := b``.diverge()
     object drain as Drain {
       to recieve (data :Bytes) {
@@ -126,22 +127,52 @@ object deBytecodeKit {
           if (buffer.size() < 1) { return }
           switch (buffer[0]) {
             match ==OP_ROOT {
+              resolver.resolve(builder.buildRoot(stack.pop()))
             }
             match ==OP_LIT_WHOLENUM {
+              def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildLiteral(wholenum))
             }
             match ==OP_LIT_NEGINT {
+              def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildLiteral(-wholenum))
             }
             match ==OP_LIT_FLOAT64 {
+              def [consumed, slumptala] := parse_FLOAT64(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildLiteral(slumptala))
             }
             match ==OP_LIT_CHAR {
+              def [consumed, shady_character] := parse_CHAR(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildLiteral(shady_character))
             }
             match ==OP_LIT_STRING {
+              def [consumed, handy_string] := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildLiteral(handy_string))
             }
             match ==OP_IMPORT {
+              def [consumed, handy_string] := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildImport(handy_string))
             }
             match ==OP_IBID {
+              def [consumed, ibid] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildIbid(ibid))
             }
             match ==OP_CALL {
+            
             }
             match ==OP_DEFINE {
             }
@@ -154,7 +185,7 @@ object deBytecodeKit {
       }
     }
     F.flowInto(drain)
-    return promise
+    return root_promise
   }
 }
 return deBytecodeKit
