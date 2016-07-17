@@ -192,10 +192,17 @@ object deBytecodeKit {
               stack.push(builder.buildCall(rec, verb, args))
             }
             match ==OP_DEFINE {
+              stack.push(builder.buildDefine(stack.pop())[0])
             }
             match ==OP_PROMISE {
+              builder.buildPromise()
             }
             match ==OP_DEFREC {
+              def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed == 0) { return }
+              # commit point
+              buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
+              stack.push(builder.buildDefrec(wholenum, stack.pop()))
             }
           }
         } until (buffer.size() == 0)
