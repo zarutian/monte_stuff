@@ -132,47 +132,64 @@ object deBytecodeKit {
             match ==OP_LIT_WHOLENUM {
               def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildLiteral(wholenum))
             }
             match ==OP_LIT_NEGINT {
               def [consumed, wholenum] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildLiteral(-wholenum))
             }
             match ==OP_LIT_FLOAT64 {
               def [consumed, slumptala] := parse_FLOAT64(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildLiteral(slumptala))
             }
             match ==OP_LIT_CHAR {
               def [consumed, shady_character] := parse_CHAR(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildLiteral(shady_character))
             }
             match ==OP_LIT_STRING {
               def [consumed, handy_string] := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildLiteral(handy_string))
             }
             match ==OP_IMPORT {
               def [consumed, handy_string] := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildImport(handy_string))
             }
             match ==OP_IBID {
               def [consumed, ibid] := parse_WHOLENUM(buffer.slice(1, (buffer.size() - 1)))
               if (consumed == 0) { return }
+              # commit point
               buffer := buffer.slice((1 + consumed), (buffer.size() - (1 + consumed)))
               stack.push(builder.buildIbid(ibid))
             }
             match ==OP_CALL {
-            
+              def [consumed1, verb]  := parse_UTF8str(buffer.slice(1, (buffer.size() - 1)))
+              if (consumed1 == 0) { return }
+              def [consumed2, arity] := parse_WHOLENUM(buffer.slice((1 + consumed1), (buffer.size() - (1 + consumed1))))
+              if (consumed2 == 0) { return }
+              # commit point
+              buffer := buffer.slice((1 + consumed1 + consumed2), (buffer.size() - (1 + consumed1 + consumed2)))
+              def stackSize := stack.size()
+              def firstArgIndex := stackSize - arity
+              def args := stack.removeRun(firstArgIndex, stackSize)
+              def rec := stack.pop()
+              stack.push(builder.buildCall(rec, verb, args))
             }
             match ==OP_DEFINE {
             }
