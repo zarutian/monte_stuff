@@ -85,10 +85,35 @@ object msgpckParser {
             # bin 32
             if (buffer.size() < 5) { return [0, null] }
             def numberOfBytes := buffer.slice(1, 4).asInteger()
-            def [consumed, bind] := parseBinary(buffer.slice(5, (buffer.size() - 1)), numberOfBytes)
+            def [consumed, bin] := parseBinary(buffer.slice(5, (buffer.size() - 1)), numberOfBytes)
             if (consumed == 0) { return [0, null] }
             return [consumed + 5, bin]
           }
+          match ==0xC7 {
+            # ext 8
+            if (buffer.size() < 2) { return [0, null] }
+            def numberOfBytes := buffer[1].asInteger()
+            def [consumed, ext] := parseExt(buffer.slice(1, (buffer.size() - 1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 2, ext]
+          }
+          match ==0xC8 {
+            # ext 16
+            if (buffer.size() < 3) { return [0, null] }
+            def numberOfBytes := buffer.slice(1, 2).asInteger()
+            def [consumed, ext] := parseExt(buffer.slice(3, (buffer.size() - 1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 3, ext]
+          }
+          match ==0xC9 {
+            # ext 32
+            if (buffer.size() < 5) { return [0, null] }
+            def numberOfBytes := buffer.slice(1, 4).asInteger()
+            def [consumed, ext] := parseExt(buffer.slice(5, (buffer.size() - 1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 5, ext]
+          }
+          
         }
       }
     }
