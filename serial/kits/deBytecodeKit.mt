@@ -19,6 +19,7 @@ def OP_DEFREC       := 12
 
 
 def parse_WHOLENUM (buffer :Bytes) :Tuple[Nat, Any] {
+  # see http://www.waterken.com/dev/Doc/code/#ExtensionNumber
   var idx := 0
   var value := 0
   while (true) {
@@ -26,7 +27,7 @@ def parse_WHOLENUM (buffer :Bytes) :Tuple[Nat, Any] {
     def byte := buffer[idx]
     value := (value << 7) + (byte & 0x7f)
     idx += 1
-    if (byte & 0x80) == 0x80) { return [idx, value] }
+    if (byte & 0x80) == 0x00) { return [idx, value] }
   }
 }
 def parse_UTF8str (buffer :Bytes) :Tuple[Nat, Any] {
