@@ -17,6 +17,14 @@ object msgpckParser {
       # pos fixint
       return [1, makeInteger(buffer[0] & 0x7f)]
     } else {
+            if ((buffer[0] & 0xF0) == 0x80) {
+        # fixmap
+      } elseif ((buffer[0] & 0xF0) == 0x90) {
+        # fixarray
+      } elseif ((buffer[0] & 0xE0) == 0xA0) {
+        # fixstr
+      } else {
+      }
     }
   }
 }
