@@ -27,15 +27,14 @@ def parse_WHOLENUM (buffer :Bytes) :Tuple[Nat, Any] {
     if (byte & 0x80) == 0x80) { return [idx, value] }
   }
 }
-def read_UTF_length (state, bytes) :stateAndInt {
-  state["continuation"] := state["continuation_rstack"].pop()
-  return [state, bytes.asInt()]
+def parse_UTF8str (buffer :Bytes) :Tuple[Nat, Any] {
+  if (buffer.size() >= 2) { return [0, null] }
+  def length := (buffer.slice(0, 2)).asInt() ; # a Short in network byte order
+  if (buffer.size() >= 2 + length) { return [0, null] }
+  def string := (buffer.slice(2, length)).asUTF8string()
+  return [(2 + length), string]
 }
-def read_UTF_bytes (state, bytes) :stateAndInt {
-  state["continuation_pstack"].push(bytes.asUTF())
-  def returned_to := state["continuation_rstack"].pop()
-  return returned_to(state, b``)
-}
+
 
 
 
