@@ -33,16 +33,19 @@ object msgpckParser {
         # fixmap
         def numberOfElements := (buffer[0] & 0x0F).asInteger()
         def [consumed, map] := parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+        if (consumed == 0) { return [0, null] }
         return [consumed + 1, map]
       } elseif ((buffer[0] & 0xF0) == 0x90) {
         # fixarray
         def numberOfElements := (buffer[0] & 0x0F).asInteger()
         def [consumed, arr] := parseArray(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+        if (consumed == 0) { return [0, null] }
         return [consumed + 1, arr]
       } elseif ((buffer[0] & 0xE0) == 0xA0) {
         # fixstr
         def numberOfBytes ;= (buffer[0] & 0x1F).asInteger()
         def [consumed, string] := parseString(buffer.slice(1, (buffer.size() -1)), numberOfBytes)
+        if (consumed == 0) { return [0, null] }
         return [consumed + 1, string]
       } else {
         switch (buffer[0]) {
@@ -62,7 +65,21 @@ object msgpckParser {
             # true
             return [1, makeBool(true)]
           }
-          mathc ==0xC4 {
+          match ==0xC4 {
+            # bin 8
+            if (buffer.size() < 2) { return [0, null] }
+            def numberOfBytes := buffer[1].asInteger()
+            def [consumed, bin] := parseBinary(buffer.slice(2, (buffer.size() - 1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 2, bin]
+          }
+          match ==0xC5 {
+            # bin 16
+            if (buffer.size() < 3) { return [0, null] }
+            def numberOfBytes := buffer.slice(1, 2).asInteger()
+            def [consumed, bin] := parseBinary(buffer.slice(3, (buffer.size() - 1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 3, bin]
           }
         }
       }
