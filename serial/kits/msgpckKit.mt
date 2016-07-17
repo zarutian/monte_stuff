@@ -26,15 +26,18 @@ object msgpckParser {
             if ((buffer[0] & 0xF0) == 0x80) {
         # fixmap
         def numberOfElements := (buffer[0] & 0x0F).asInteger()
-        def [consumed, map] := msgpckParser.parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+        def [consumed, map] := parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
         return [consumed + 1, map]
       } elseif ((buffer[0] & 0xF0) == 0x90) {
         # fixarray
         def numberOfElements := (buffer[0] & 0x0F).asInteger()
-        def [consumed, arr] := msgpckParser.parseArray(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+        def [consumed, arr] := parseArray(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
         return [consumed + 1, arr]
       } elseif ((buffer[0] & 0xE0) == 0xA0) {
         # fixstr
+        def numberOfBytes ;= (buffer[0] & 0x1F).asInteger()
+        def [consumed, string] := parseString(buffer.slice(1, (buffer.size() -1)), numberOfBytes)
+        return [consumed + 1, string]
       } else {
         switch (buffer[0]) {
           match ==0xC0 {
