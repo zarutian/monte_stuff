@@ -123,6 +123,9 @@ object msgpckParser {
             if (buffer.size() < 9) {
             return [9, makeFloat64(buffer.slice(1, 8))]
           }
+          match ==0xCC {
+            # uint 8
+          }
         }
       }
     }
