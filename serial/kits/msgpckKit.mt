@@ -184,21 +184,21 @@ object msgpckParser {
             if (consumed == 0) { return [0, null] }
             return [consumed + 1, ext]
           }
-          match =0xD7 {
+          match ==0xD7 {
             # fixext 8
             if (buffer.sice() < 10) { return [0, null] }
             def [consumed, ext] := parseExt(buffer.slice(1, 9), 9)
             if (consumed == 0) { return [0, null] }
             return [consumed + 1, ext]
           }
-          match =0xD8 {
+          match ==0xD8 {
             # fixext 16
             if (buffer.size() < 18) { return [0, null] }
             def [consumed, ext] := parseExt(buffer.slice(1, 17), 17)
             if (consumed == 0) { return [0, null] }
             return [consumed + 1, ext]
           }
-          match =0xD9 {
+          match ==0xD9 {
             # str 8
             if (buffer.size() < 2) { return [0, null] }
             def numberOfBytes := buffer[1].asInteger()
@@ -206,7 +206,7 @@ object msgpckParser {
             if (consumed == 0) { return [0, null] }
             return [consumed + 2, string]
           }
-          match =0xDA {
+          match ==0xDA {
             # str 16
             if (buffer.size() < 3) { return [0, null] }
             def numberOfBytes := buffer.slice(1, 2).asInteger()
@@ -214,13 +214,45 @@ object msgpckParser {
             if (consumed == 0) { return [0, null] }
             return [consumed + 3, string]          
           }
-          match =0xDB {
+          match ==0xDB {
             # str 32
             if (buffer.size() < 5) { return [0, null] }
             def numberOfBytes := buffer.slice(1, 4).asInteger()
             def [consumed, string] := parseString(buffer.slice(5, (buffer.size() -1)), numberOfBytes)
             if (consumed == 0) { return [0, null] }
             return [consumed + 5, string]
+          }
+          match ==0xDC {
+            # array 16
+            if (buffer.size() < 3) { return [0, null] }
+            def numberOfElements := buffer.slice(1,2).asInteger()
+            def [consumed, arr] := parseArray(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 3, arr]
+          }
+          match ==0xDD {
+            # array 32
+            if (buffer.size() < 5) { return [0, null] }
+            def numberOfElements := buffer.slice(1,4).asInteger()
+            def [consumed, arr] := parseArray(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 5, arr]
+          }
+          match ==0xDE {
+            # map 16
+            if (buffer.size() < 3) { return [0, null] }
+            def numberOfElements := buffer.slice(1,2).asInteger()
+            def [consumed, map] := parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 3, map]
+          }
+          match ==0xDF {
+            # map 32
+            if (buffer.size() < 5) { return [0, null] }
+            def numberOfElements := buffer.slice(1,4).asInteger()
+            def [consumed, map] := parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 5, map]
           }
         }
       }
