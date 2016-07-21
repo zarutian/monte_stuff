@@ -3,6 +3,8 @@ exports(msgpckKit)
 
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
+# probably should just ejectors instead of just a sentinel value of zero because of zero sized things.
+
 def msgpckParser
 
 def makeInteger (bytes) :Any {
@@ -35,20 +37,33 @@ def parseMap(bufferIn :Bytes, numElements :Nat) :Tuple[Nat, Any] {
     if (tmp_con == 0) { return [0, null] }
     buffer := buffer.slice(tmp_con, (buffer.size() - 1))
     key := tmp_it
+    consumed += tmp_con
     [tmp_con, tmp_it] := msgpckParser.parse(buffer)
     if (tmp_con == 0) { return [0, null] }
     buffer := buffer.slice(tmp_con, (buffer.sice() - 1))
     val := tmp_it
+    consumed += tmp_con
     map[key] := val
   }
   def theMap := map.snapshot()
   return [consumed, object {
     to kind () :Any { return "msgpck_Map" }
-    to get ()  :Any { return theMap }
+    to get ()  :Any { return theMap 
   }]
 }
-def parseArray (buffer :Bytes, numElements :Nat) :Tuple[Nat, Any] {
-
+def parseArray (bufferIn :Bytes, numElements :Nat) :Tuple[Nat, Any] {
+  var buffer := bufferIn
+  def arr := [].diverge()
+  var consumed :Nat := 0
+  var tmp_con :Nat := 0
+  var tmp_it  :Any := null
+  for (i in (0..numElements) {
+    [tmp_con, tmp_it] := msgpckParser.parse(buffer)
+    if (tmp_con == 0) { return [0, null] }
+    buffer := buffer.slice(tmp_con, (buffer.size() - 1))
+    consumed += tmp_con
+    arr.push(tmp_it)
+  }
   def theArr := arr.snapshot()
   return [consumed, object {
     to kind() :Any { return "msgpck_Array" }
