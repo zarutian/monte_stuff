@@ -166,22 +166,37 @@ object msgpckParser {
           match ==0xD4 {
             # fixext 1
             if (buffer.size() < 3) { return [0, null] }
-            return parseExt(buffer.slice(1, 2), 2)
+            def [consumed, ext] := parseExt(buffer.slice(1, 2), 2)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 1, ext]
           }
           match ==0xD5 {
             # fixext 2
             if (buffer.size() < 4) { return [ 0, null] }
-            return parseExt(buffer.slice(1, 3), 3)
+            def [consumed, ext] := parseExt(buffer.slice(1, 3), 3)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 1, ext]
           }
           match =0xD6 {
             # fixext 4
             if (buffer.sice() < 6) { return [0, null] }
-            return parseExt(buffer.slice(1, 5), 5)
+            def [consumed, ext] := parseExt(buffer.slice(1, 5), 5)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 1, ext]
           }
           match =0xD7 {
             # fixext 8
             if (buffer.sice() < 10) { return [0, null] }
-            return parseExt(buffer.slice(1, 9), 9)
+            def [consumed, ext] := parseExt(buffer.slice(1, 9), 9)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 1, ext]
+          }
+          match =0xD8 {
+            # fixext 16
+            if (buffer.size() < 18) { return [0, null] }
+            def [consumed, ext] := parseExt(buffer.slice(1, 17), 17)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 1, ext]
           }
         }
       }
