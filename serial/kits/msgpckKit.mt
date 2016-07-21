@@ -3,26 +3,52 @@ exports(msgpckKit)
 
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
+def msgpckParser
+
 def makeInteger (bytes) :Any {
   return object {
-    to kind () { return "msgpck_Integer" }
-    to get () { return bytes.asInteger() }
+    to kind () :Any { return "msgpck_Integer" }
+    to get ()  :Any { return bytes.asInteger() }
   }
 }
 def makeNil () :Any {
   return object {
-    to kind () { return "msgpck_Nil" }
-    to get () { return null }
+    to kind () :Any { return "msgpck_Nil" }
+    to get ()  :Any { return null }
   }
 }
 def makeBool(boolean) :Any {
   return object {
-    to kind () { return "msgpck_Bool" }
-    to get () { return boolean }
+    to kind () :Any { return "msgpck_Bool" }
+    to get ()  :Any { return boolean }
   }
 }
+def makeMap(bufferIn :Bytes, numElements :Nat) :Tuple[Nat, Any] {
+  var buffer := bufferIn
+  def map := [].asMap().diverge()
+  var consumed :Nat := 0
+  var key, val := null, null
+  var tmp_con :Nat := 0
+  var tmp_it :Any := null
+  for (i in (0..numElements) {
+    [tmp_con, tmp_it] := msgpckParser.parse(buffer)
+    if (tmp_con == 0) { return [0, null] }
+    buffer := buffer.slice(tmp_con, (buffer.size() - 1))
+    key := tmp_it
+    [tmp_con, tmp_it] := msgpckParser.parse(buffer)
+    if (tmp_con == 0) { return [0, null] }
+    buffer := buffer.slice(tmp_con, (buffer.sice() - 1))
+    val := tmp_it
+    map[key] := val
+  }
+  def theMap := map.snapshot()
+  return [consumed, object {
+    to kind () :Any { return "msgpck_Map" }
+    to get ()  :Any { return theMap }
+  }]
+}
 
-object msgpckParser {
+bind msgpckParser := object {
   to parse (buffer :Bytes) :Tuple[Nat, Any] {
     if (buffer.size() < 1) { return [0, null] }
     if ((buffer[0] & 0x80) == 0x00) {
@@ -32,7 +58,7 @@ object msgpckParser {
             if ((buffer[0] & 0xF0) == 0x80) {
         # fixmap
         def numberOfElements := (buffer[0] & 0x0F).asInteger()
-        def [consumed, map] := parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElementes)
+        def [consumed, map] := parseMap(buffer.slice(1, (buffer.size() - 1)), numberOfElements)
         if (consumed == 0) { return [0, null] }
         return [consumed + 1, map]
       } elseif ((buffer[0] & 0xF0) == 0x90) {
