@@ -120,11 +120,50 @@ object msgpckParser {
           }
           match ==0xCB {
             # float 64
-            if (buffer.size() < 9) {
+            if (buffer.size() < 9) { return [0, null] }
             return [9, makeFloat64(buffer.slice(1, 8))]
           }
           match ==0xCC {
             # uint 8
+            if (buffer.size() < 2) { return [0, null] }
+            return [2, makeUint(buffer[1])]
+          }
+          match ==0xCD {
+            # uint 16
+            if (buffer.size() < 3) { return [0, null] }
+            return [3, makeUint(buffer.slice(1, 2))]
+          }
+          match ==0xCE {
+            # uint 32
+            if (buffer.size() < 5) { return [0, null] }
+            return [5, makeUint(buffer.slice(1, 4))]
+          }
+          match ==0xCF {
+            # uint 64
+            if (buffer.size() < 9) { return [0, null] }
+            return [9, makeUint(buffer.slice(1, 8))]
+          }
+          match ==0xD0 {
+            # int 8
+            if (buffer.size() < 2) { return [0, null] }
+            return [2, makeInt(buffer[1])]
+          }
+          match ==0xD1 {
+            # int 16
+            if (buffer.size() < 3) { return [0, null] }
+            return [3, makeInt(buffer.slice(1, 2))]
+          }
+          match ==0xD2 {
+            # int 32
+            if (buffer.size() < 5) { return [0, null] }
+            return [5, makeInt(buffer.slice(1, 4))]
+          }
+          match ==0xD3 {
+            # int 64
+            if (buffer.size() < 9) { return [0, null] }
+            return [9, makeInt(buffer.slice(1, 8))]
+          }
+          match ==0xD4 {
           }
         }
       }
