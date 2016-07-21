@@ -23,7 +23,7 @@ def makeBool(boolean) :Any {
     to get ()  :Any { return boolean }
   }
 }
-def makeMap(bufferIn :Bytes, numElements :Nat) :Tuple[Nat, Any] {
+def parseMap(bufferIn :Bytes, numElements :Nat) :Tuple[Nat, Any] {
   var buffer := bufferIn
   def map := [].asMap().diverge()
   var consumed :Nat := 0
@@ -46,6 +46,14 @@ def makeMap(bufferIn :Bytes, numElements :Nat) :Tuple[Nat, Any] {
     to kind () :Any { return "msgpck_Map" }
     to get ()  :Any { return theMap }
   }]
+}
+def parseArray (buffer :Bytes, numElements :Nat) :Tuple[Nat, Any] {
+
+  def theArr := arr.snapshot()
+  return [consumed, object {
+    to kind() :Any { return "msgpck_Array" }
+    to get () :Any ( return theArr }
+  }
 }
 
 bind msgpckParser := object {
