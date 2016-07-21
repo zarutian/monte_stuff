@@ -164,6 +164,24 @@ object msgpckParser {
             return [9, makeInt(buffer.slice(1, 8))]
           }
           match ==0xD4 {
+            # fixext 1
+            if (buffer.size() < 3) { return [0, null] }
+            return parseExt(buffer.slice(1, 2), 2)
+          }
+          match ==0xD5 {
+            # fixext 2
+            if (buffer.size() < 4) { return [ 0, null] }
+            return parseExt(buffer.slice(1, 3), 3)
+          }
+          match =0xD6 {
+            # fixext 4
+            if (buffer.sice() < 6) { return [0, null] }
+            return parseExt(buffer.slice(1, 5), 5)
+          }
+          match =0xD7 {
+            # fixext 8
+            if (buffer.sice() < 10) { return [0, null] }
+            return parseExt(buffer.slice(1, 9), 9)
           }
         }
       }
