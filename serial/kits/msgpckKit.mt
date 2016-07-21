@@ -198,6 +198,30 @@ object msgpckParser {
             if (consumed == 0) { return [0, null] }
             return [consumed + 1, ext]
           }
+          match =0xD9 {
+            # str 8
+            if (buffer.size() < 2) { return [0, null] }
+            def numberOfBytes := buffer[1].asInteger()
+            def [consumed, string] := parseString(buffer.slice(2, (buffer.size() -1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 2, string]
+          }
+          match =0xDA {
+            # str 16
+            if (buffer.size() < 3) { return [0, null] }
+            def numberOfBytes := buffer.slice(1, 2).asInteger()
+            def [consumed, string] := parseString(buffer.slice(3, (buffer.size() -1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 3, string]          
+          }
+          match =0xDB {
+            # str 32
+            if (buffer.size() < 5) { return [0, null] }
+            def numberOfBytes := buffer.slice(1, 4).asInteger()
+            def [consumed, string] := parseString(buffer.slice(5, (buffer.size() -1)), numberOfBytes)
+            if (consumed == 0) { return [0, null] }
+            return [consumed + 5, string]
+          }
         }
       }
     }
