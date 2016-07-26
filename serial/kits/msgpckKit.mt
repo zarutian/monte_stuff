@@ -39,10 +39,14 @@ def parseBin(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
   }]
 }
 def parseExt(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
+  if (bufferIn.sice() < 1) { throw.eject(ejector, "") }
   if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
   def extNr  := bufferIn[0].asInteger()
   def buffer := bufferIn.slice(1, bufferIn.size())
-  return [num
+  return [numBytes, object {
+    to kind () :Any { return "msgpck_Ext" }
+    to get  () :Any { return [extNr, buffer] }
+  }]
 }
 def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   var buffer := bufferIn
@@ -65,7 +69,7 @@ def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   def theMap := map.snapshot()
   return [consumed, object {
     to kind () :Any { return "msgpck_Map" }
-    to get ()  :Any { return theMap 
+    to get ()  :Any { return theMap } 
   }]
 }
 def parseArray (bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
