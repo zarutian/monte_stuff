@@ -3,8 +3,6 @@ exports(msgpckKit)
 
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
-# probably should just ejectors instead of just a sentinel value of zero because of zero sized things.
-
 def msgpckParser
 
 def makeInteger (bytes) :Any {
@@ -24,6 +22,27 @@ def makeBool(boolean) :Any {
     to kind () :Any { return "msgpck_Bool" }
     to get ()  :Any { return boolean }
   }
+}
+def parseString(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
+  if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
+  def str := UTF8.decode(bufferIn)
+  return [numBytes, object {
+    to kind () :Any { return "msgpck_utf8Str" }
+    to get ()  :Any { return str }
+  }]
+}
+def parseBin(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
+  if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
+  return [numBytes, object {
+    to kind () :Any { return "msgpck_Binary" }
+    to get () :Any { return bufferIn }
+  }]
+}
+def parseExt(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
+  if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
+  def extNr  := bufferIn[0].asInteger()
+  def buffer := bufferIn.slice(1, bufferIn.size())
+  return [num
 }
 def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   var buffer := bufferIn
