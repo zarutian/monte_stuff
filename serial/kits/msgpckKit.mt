@@ -367,7 +367,69 @@ object msgpckKit {
             to get ()  :Any { return DeliverOnly }
           }
         }
-        
+        match ==3 {
+          # Deliver
+        }
+        match ==4 {
+          # GCExport
+        }
+        match ==5 {
+          # GCAnswer
+        }
+        match ==6 {
+          # Shutdown
+        }
+        match ==7 {
+          # Terminated
+        }
+        match ==8 {
+          # Export
+        }
+        match ==9 {
+          # Answer
+        }
+        match ==10 {
+          # Import
+        }
+        match ==11 {
+          # Question
+        }
+        match ==12 {
+          # newFarDesc
+        }
+        match ==13 {
+          # newRemotePromiseDesc
+        }
+        match ==14 {
+          # newPromise3Desc
+        }
+        match ==15 {
+          # RemoteDeliver
+        }
+        match ==16 {
+          # RemoteCall
+        }
+        match ==17 {
+          # LocatorUnumDesc
+        }
+        match ==18 {
+          # SturdyRef
+        }
+        match ==19 {
+          # crypto hash. (SHA256)
+        }
+        match ==20 {
+          # ActiveCapCert
+        }
+        match ==21 {
+          # PostalRefACC
+        }
+        match ==22 {
+          # Macaroony
+        }
+        match ==23 {
+          # PostalRefM
+        }
       }      
     }
     # ég man ekkert hvernig samningurinn var fyir recognizers
