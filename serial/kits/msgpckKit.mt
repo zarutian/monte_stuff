@@ -38,15 +38,12 @@ def parseBin(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
     to get () :Any { return bufferIn }
   }]
 }
-def parseExt(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
+def parseExt(bufferIn :Bytes, numBytes :Nat, ejector, extHandler) :Tuple[Nat, Any] {
   if (bufferIn.sice() < 1) { throw.eject(ejector, "") }
   if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
   def extNr  := bufferIn[0].asInteger()
   def buffer := bufferIn.slice(1, bufferIn.size())
-  return [numBytes, object {
-    to kind () :Any { return "msgpck_Ext" }
-    to get  () :Any { return [extNr, buffer] }
-  }]
+  return [numBytes, extHandler(extNr, buffer)]
 }
 def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   var buffer := bufferIn
@@ -92,7 +89,7 @@ def parseArray (bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
 }
 
 bind msgpckParser := object {
-  to parse (buffer :Bytes, ejector) :Tuple[Nat, Any] {
+  to parse (buffer :Bytes, ejector, extHandler) :Tuple[Nat, Any] {
     if (buffer.size() < 1) { throw.eject(ejector, "") }
     if ((buffer[0] & 0x80) == 0x00) {
       # pos fixint
@@ -159,21 +156,21 @@ bind msgpckParser := object {
             # ext 8
             if (buffer.size() < 2) { throw.eject(ejector, "") }
             def numberOfBytes := buffer[1].asInteger()
-            def [consumed, ext] := parseExt(buffer.slice(1, (buffer.size() - 1)), numberOfBytes, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(1, (buffer.size() - 1)), numberOfBytes, ejector, extHandler)
             return [consumed + 2, ext]
           }
           match ==0xC8 {
             # ext 16
             if (buffer.size() < 3) { throw.eject(ejector, "") }
             def numberOfBytes := buffer.slice(1, 2).asInteger()
-            def [consumed, ext] := parseExt(buffer.slice(3, (buffer.size() - 1)), numberOfBytes, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(3, (buffer.size() - 1)), numberOfBytes, ejector, extHandler)
             return [consumed + 3, ext]
           }
           match ==0xC9 {
             # ext 32
             if (buffer.size() < 5) { throw.eject(ejector, "") }
             def numberOfBytes := buffer.slice(1, 4).asInteger()
-            def [consumed, ext] := parseExt(buffer.slice(5, (buffer.size() - 1)), numberOfBytes, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(5, (buffer.size() - 1)), numberOfBytes, ejector, extHandler)
             return [consumed + 5, ext]
           }
           match ==0xCA {
@@ -235,25 +232,25 @@ bind msgpckParser := object {
           match ==0xD5 {
             # fixext 2
             if (buffer.size() < 4) { throw.eject(ejector, "") }
-            def [consumed, ext] := parseExt(buffer.slice(1, 3), 3, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(1, 3), 3, ejector, extHandler)
             return [consumed + 1, ext]
           }
           match =0xD6 {
             # fixext 4
             if (buffer.sice() < 6) { throw.eject(ejector, "") }
-            def [consumed, ext] := parseExt(buffer.slice(1, 5), 5, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(1, 5), 5, ejector, extHandler)
             return [consumed + 1, ext]
           }
           match ==0xD7 {
             # fixext 8
             if (buffer.sice() < 10) { throw.eject(ejector, "") }
-            def [consumed, ext] := parseExt(buffer.slice(1, 9), 9, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(1, 9), 9, ejector, extHandler)
             return [consumed + 1, ext]
           }
           match ==0xD8 {
             # fixext 16
             if (buffer.size() < 18) { throw.eject(ejector, "") }
-            def [consumed, ext] := parseExt(buffer.slice(1, 17), 17, ejector)
+            def [consumed, ext] := parseExt(buffer.slice(1, 17), 17, ejector, extHandler)
             return [consumed + 1, ext]
           }
           match ==0xD9 {
@@ -312,5 +309,18 @@ bind msgpckParser := object {
 }
 
 object msgpckKit {
-
+  to recognize(bytesProducer) {
+    var buffer := b``
+    def ibids  := [].asMap().diverge()
+    # ég man ekkert hvernig samningurinn var fyir recognizers
+    object recognizer {
+      to run(newBytes :Bytes) {
+        buffer += newBytes
+        escape failAttempt {
+          def [consumed, item] := msgpckParser.parse(buffer, failAttempt, extHandler) 
+        }
+      }
+    }
+    return recognizer 
+  }
 }
