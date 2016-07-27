@@ -312,12 +312,18 @@ object msgpckKit {
   to recognize(bytesProducer) {
     var buffer := b``
     def ibids  := [].asMap().diverge()
+    def extHandler (extNr :Integer, buffer :Bytes) {
+      
+    }
     # ég man ekkert hvernig samningurinn var fyir recognizers
     object recognizer {
       to run(newBytes :Bytes) {
+        # gets called by byteProducer presumably
         buffer += newBytes
         escape failAttempt {
-          def [consumed, item] := msgpckParser.parse(buffer, failAttempt, extHandler) 
+          def [consumed, item] := msgpckParser.parse(buffer, failAttempt, extHandler)
+          buffer := buffer.slice(consumed, buffer.size())
+          # do something with item 
         }
       }
     }
