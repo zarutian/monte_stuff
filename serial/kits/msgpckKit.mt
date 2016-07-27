@@ -97,6 +97,9 @@ bind msgpckParser := object {
     if ((buffer[0] & 0x80) == 0x00) {
       # pos fixint
       return [1, makeInteger(buffer[0] & 0x7f)]
+    } elseif (buffer[0] & 0xE0 == 0xE0) {
+      # neg fixint
+      return [1, makeInteger(buffer[0] & 0x1f).negate()]
     } else {
             if ((buffer[0] & 0xF0) == 0x80) {
         # fixmap
