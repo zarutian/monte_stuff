@@ -43,7 +43,7 @@ def parseExt(bufferIn :Bytes, numBytes :Nat, ejector, extHandler) :Tuple[Nat, An
   if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
   def extNr  := bufferIn[0].asInteger()
   def buffer := bufferIn.slice(1, bufferIn.size())
-  return [numBytes, extHandler(extNr, buffer)]
+  return [numBytes, extHandler(extNr, buffer, ejector)]
 }
 def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   var buffer := bufferIn
@@ -312,8 +312,63 @@ object msgpckKit {
   to recognize(bytesProducer) {
     var buffer := b``
     def ibids  := [].asMap().diverge()
-    def extHandler (extNr :Integer, buffer :Bytes) {
-      
+    def extHandler (extNr :Integer, bufferIn :Bytes, ejector) {
+      var buffer := bufferIn
+      switch (extNr) {
+        match ==0 {
+          # letrc
+          def [consumed_i, ibidnr] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_i == 0) { throw.throw(ejector, "zero sized ibidnr!") }
+          if (ibidnr.kind() != "msgpck_uint") { throw.throw(ejector, "ibidnr is not an uint!") }
+          if (ibids[ibidnr] != null) { throw.throw(ejector, "ibidnr already in use!") }
+          buffer := buffer.slice(consumed_i, buffer.size())
+          def [promise, resolver] := Ref.promise()
+          ibids[ibidnr] := promise
+          def [consumed_a, item] := msgpckParser.parse(buffer. ejector, extHandler)]
+          resolver.resolve(item)
+          buffer := buffer.slice(consumed_a, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only two things should be inside of an letrc") }
+          return item
+        }
+        match ==1 {
+          # ibid
+          def [consumed_i, ibidnr] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_i == 0) { throw.throw(ejector, "zero sized ibidnr!") }
+          if (ibidnr.kind() != "msgpck_uint") { throw.throw(ejector, "ibidnr is not an uint!") }
+          buffer := buffer.slice(consumed_i, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only one thing should be inside of an ibid") }
+          return ibids[ibidnr]
+        }
+        match ==2 {
+          # DeliverOnly
+          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
+          buffer := buffer.slice(consumed_rec, buffer.size())
+          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
+          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
+          buffer := buffer.slice(consumed_ver, buffer.size())
+          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
+          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
+          buffer := buffer.slice(consumed_arg, buffer.size())
+          var kwargs := null
+          var consumed_kwa := 0
+          if (buffer.size() > 0) {
+            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
+            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
+            buffer := buffer.slice(consumed_kwa, buffer.size())
+          } else {
+            kwargs := [].asMap()
+          }
+          def DeliverOnly := [recipiant, verb, args, kwargs]
+          return object {
+            to kind () :Any { return "DeliverOnly" }
+            to get ()  :Any { return DeliverOnly }
+          }
+        }
+        
+      }      
     }
     # ég man ekkert hvernig samningurinn var fyir recognizers
     object recognizer {
