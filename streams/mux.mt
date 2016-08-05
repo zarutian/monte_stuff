@@ -54,8 +54,27 @@ def makeDemuxingSink (theOnwardSinks :List[Sink]) :Sink {
       return 0
     }
   }
-  def outSink := object as Sink {}
-  
+  def outSink := object as Sink {
+    to run(packet :Bytes) {
+      # this should now be only getting segments
+      def chanId := (packet[0] >> 4) & 0x0F
+      theOnwardSinks[chanId].run(packet.slice(1, packet.size()))
+    }
+    to abort(problem) :Vow[Void] {
+      def vows := [].diverge()
+      for (i in (0 .. 15)) {
+        vows.push(theOnwardSinks[i].abort(problem))
+      }
+      return whenAllSettled(vows, null)
+    }
+    to complete() :Vow[Void] {
+      def vows := [].diverge()
+      for (i in (0 .. 15)) {
+        vows.push(theOnwardSinks[i].complete())
+      }
+      return whenAllSettled(vows, null)
+    }
+  }
   def bufferedSink := makeBufferedSink(b``, completeTo, outSink)
   return bufferedSink
 }
