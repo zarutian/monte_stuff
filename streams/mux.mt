@@ -6,9 +6,8 @@ import "bufferedStream" =~ [ => makeBufferedSink]
 #    1 nybble (4 bits): payload_length (1 to 16)
 #  payload_length bytes: payload for channel channel_id
 
-def makeMuxingPipe () :Tuple[Source, List[Sink]] {
+def makeMuxingSink (theOnwardSink :Sink) :List[Sink] {
   # does no prioritization
-  var [theOnwardSink, resolveOnwardSink] := Ref.promise()
   def sinks := [].diverge()
   def makeSink (chanId) {
     return object as Sink {
@@ -19,20 +18,20 @@ def makeMuxingPipe () :Tuple[Source, List[Sink]] {
           if (s > 16) {
             def out := (_makeBytes.fromInts([((chanId << 4) + 16)])) + buffer.slice(0, 16)
             buffer := buffer.slice(16, s)
-            theOnwardSink <- run(out)
+            theOnwardSink(out)
           } else if (s == 0) {
             break
           } else {
             def out := (_makeBytes.fromInts([((chanId << 4) + s + 1)])) + buffer
-            theOnwardSink <- run(out)
+            theOnwardSink(out)
             break
           }
         }
         to abort(problem) :Vow[Void] {
-          return theOnwardSink <- abort(problem)
+          return theOnwardSink.abort(problem)
         }
         to complete() :Vow[Void] {
-          return theOnwardSink <- complete()
+          return theOnwardSink.complete()
         }
       }
     }
@@ -40,8 +39,23 @@ def makeMuxingPipe () :Tuple[Source, List[Sink]] {
   for (i in (0 .. 15)) {
     sinks.push(makeSink(i))
   }
-  def source as Source (sink :Sink) {
-    resolveOnwardSink.resolve(sink)
+  return sinks.snapshot()
+}
+def makeDemuxingSink (theOnwardSinks :List[Sink]) :Sink {
+  if (theOnwardSinks.size() != 16) {
+    throw("theOnwardSinks list be exactly 16 elements long")
   }
-  return [source, sinks]
+  def completeTo (buffer :Bytes) :Nat {
+    if (buffer.size() == 0) { return 0 }
+    def length := (buffer[0] & 0x0F) + 1
+    if (buffer.size() >= (length + 1)) {
+      return length
+    } else {
+      return 0
+    }
+  }
+  def outSink := object as Sink {}
+  
+  def bufferedSink := makeBufferedSink(b``, completeTo, outSink)
+  return bufferedSink
 }
