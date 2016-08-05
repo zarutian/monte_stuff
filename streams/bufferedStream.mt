@@ -10,6 +10,9 @@ def makeBufferedSink (startBuffer, completeTo :OneArgFunc, nextSink :Sink) :Sink
       nextSink(segment)
     }
     to complete() :Vow[Void] {
+      if (buffer.size() > 0) {
+        nextSink(buffer)
+      }
       return nextSink.complete()
     }
     to abort(problem) :Vow[Void] {
