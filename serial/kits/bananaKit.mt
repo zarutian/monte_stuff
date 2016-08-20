@@ -20,7 +20,17 @@ def ERROR      := 0x8D
 def PING       := 0x8E
 def PONG       := 0x8F
 
-# takes in stream of bytes and sinks whole banana tokens onwards
+def fromLittleEndianBase128toNatural (input :Bytes) :Nat {
+  var acc := 0
+  var idx := 0
+  while (idx < input.size()) {
+    acc := acc + (input[idx] << (idx * 7))
+    idx += 1
+  }
+  return acc
+}
+
+# takes in stream of :Bytes and sinks whole banana tokens (still :Bytes though but broken up) onwards
 def makeBananaTokensSink (onward :Sink) :Sink {
   def completeTo (buffer :Bytes) :Nat {
     # this is a pure function
@@ -39,5 +49,12 @@ def makeBananaTokensSink (onward :Sink) :Sink {
       }
     }
     if (type_found == false) { return 0 }
+    switch (buffer[idx]) {
+      match ==LIST_old { return idx }
+      match ==INT      { return idx }
+      match ==STRING {
+      
+      }
+    }
   }
 }
