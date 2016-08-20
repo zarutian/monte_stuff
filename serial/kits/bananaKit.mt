@@ -30,7 +30,7 @@ def fromLittleEndianBase128toNatural (input :Bytes) :Nat {
   return acc
 }
 
-# takes in stream of :Bytes and sinks whole banana tokens (still :Bytes though but broken up) onwards
+# makes an sink that takes in stream of :Bytes and sinks whole banana tokens (still :Bytes though but broken up) onwards
 def makeBananaTokensSink (onward :Sink) :Sink {
   def completeTo (buffer :Bytes) :Nat {
     # this is a pure function
@@ -86,4 +86,5 @@ def makeBananaTokensSink (onward :Sink) :Sink {
     }
     return 0
   }
+  return makeBufferedSink(b``, completeTo, onward)
 }
