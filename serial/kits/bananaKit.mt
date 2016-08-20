@@ -48,13 +48,42 @@ def makeBananaTokensSink (onward :Sink) :Sink {
         idx += 1
       }
     }
+    # for the purpose of offsetting an off by one errors below when idx is being used as length
+    idx += 1
     if (type_found == false) { return 0 }
     switch (buffer[idx]) {
       match ==LIST_old { return idx }
       match ==INT      { return idx }
       match ==STRING {
-      
+        def length := fromLittleEndianBase128toNatural(header)
+        return (idx + length)
+      }
+      match ==NEG      { return idx }
+      match ==FLOAT    { return (idx + 8) }
+      match ==OLDLONGINT { return idx }
+      match ==OLDLONGNEG { return idx }
+      match ==VOCAB    { return idx }
+      match ==OPEN     { return idx }
+      match ==CLOSE    { return idx }
+      match ==ABORT    { return idx }
+      match ==LONGINT  {
+        def length := fromLittleEndianBase128toNatural(header)
+        return (idx + length)
+      }
+      match ==LONGNEG  {
+        def length := fromLittleEndianBase128toNatural(header)
+        return (idx + length)
+      }
+      match ==ERROR {
+        def length := fromLittleEndianBase128toNatural(header)
+        return (idx + length)
+      }
+      match ==PING { return idx }
+      match ==PONG { return idx }
+      default {
+        throw.throw("Unknown banana token type")
       }
     }
+    return 0
   }
 }
