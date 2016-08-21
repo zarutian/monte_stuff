@@ -118,7 +118,7 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
 
 def makeUnslicerRecognizer ()[kwargs] {
   def vocabulary := kwargs["vocab"].diverge()
-  var openings :Nat := 0
+  def unslicers  := kwargs["unslicers"]
   
   def unvocaber (packet :bananaTokenTuple) :bananaTokenTuple {
     if (packet[1] == VOCAB) {
@@ -131,12 +131,20 @@ def makeUnslicerRecognizer ()[kwargs] {
 
   def recognizer {
     to recognize(src :Source, builder) {
-      var stack := [].diverge()
-      slicerStack.push(ROOT_unslicer)
+      var unslicerStack := [].diverge()
+      unslicerStack.push(kwargs["root_unslicer"])
+      
+      var inOpen :Bool := false
+      var opentype := null
       def mySink as Sink {
         to run(packet :bananaTokenTuple) {
-          switch (packet[1]) {
-
+          if (inOpen) {
+            
+          } else (
+            if (packet[1] == OPEN) {
+              inOpen := true
+              opentype := [].diverge()
+            }
           }
         }
         to complete() :Vow[Void] {}
