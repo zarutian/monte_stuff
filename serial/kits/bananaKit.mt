@@ -31,7 +31,7 @@ def fromLittleEndianBase128toNatural (input :Bytes) :Nat {
 }
 
 # makes an sink that takes in stream of :Bytes and sinks whole banana tokens (still :Bytes though but broken up) onwards
-def makeBananaTokensSink (onward :Sink) :Sink {
+def makeBananaTokensSink_Bytes (onward :Sink) :Sink {
   def completeTo (buffer :Bytes) :Nat {
     # this is a pure function
     def buf_size = buffer.size()
@@ -88,3 +88,19 @@ def makeBananaTokensSink (onward :Sink) :Sink {
   }
   return makeBufferedSink(b``, completeTo, onward)
 }
+# makes an sink that takes :Bytes and sinks tuples of the form [header, type, contents] onwards
+def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
+  def tuplerSink {
+    to run (packet :Bytes) {
+      
+    }
+    to complete() :Vow[Null] {
+      return onward <- complete()
+    }
+    to abort(problem) :Vow[Null] {
+      return onward <- abort(problem)
+    }
+  }
+  return makeBananaTokenSink_Bytes(tuplerSink)
+}
+
