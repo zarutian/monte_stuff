@@ -2,6 +2,7 @@
 # this uses the streams instead of tubes.
 
 import "../streams/bufferedStream.mt" =~ [ => makeBufferedSink ]
+import "../streams/mappingSink.mt" =~ [ => makeMappingSink ]
 
 def LIST_old   := 0x80
 def INT        := 0x81
@@ -90,17 +91,26 @@ def makeBananaTokensSink_Bytes (onward :Sink) :Sink {
 }
 # makes an sink that takes :Bytes and sinks tuples of the form [header, type, contents] onwards
 def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
-  def tuplerSink {
-    to run (packet :Bytes) {
-      
+  def tupler (packet :Bytes) :Tuple[Nat, Bytes[1], Bytes] {
+    def size = packet.size()
+    if (size == 0) { throw.throw("an empty packet was recieved") }
+    var header := b``
+    var type_byte := b``
+    var idx := 0
+    var type_found :Bool := false
+    while (idx < size) {
+      if ((packet[idx] & 0x80) == 0x80) {
+        type_found := true
+        type_byte  := packet[idx]
+        break
+      } else {
+        header += packet[idx]
+        idx += 1
+      }
     }
-    to complete() :Vow[Null] {
-      return onward <- complete()
-    }
-    to abort(problem) :Vow[Null] {
-      return onward <- abort(problem)
-    }
+     
+    idx += 1
   }
-  return makeBananaTokenSink_Bytes(tuplerSink)
+  return makeBananaTokenSink_Bytes(makeMappingSink(tupler))
 }
 
