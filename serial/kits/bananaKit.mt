@@ -116,6 +116,12 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
   return makeBananaTokensSink_Bytes(makeMappingSink(tupler, onward))
 }
 
+def unslicers := [].asMap().diverge()
+unslicers["unicode"] = Unicode_unslicer
+unslicers["list"]    = list_unslicer
+unslicers["tuple"]   = tuple_unslicer
+unslicers["dict"]    = dict_unslicer
+
 
 def makeUnslicerRecognizer ()[kwargs] {
   
