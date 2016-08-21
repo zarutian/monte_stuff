@@ -118,13 +118,14 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
 
 def unslicers := [].asMap().diverge()
 # safe unslicers
-unslicers["unicode"] = Unicode_unslicer
-unslicers["list"]    = list_unslicer
-unslicers["tuple"]   = tuple_unslicer
-unslicers["dict"]    = dict_unslicer
-unslicers["none"]    = none_unslicer
-unslicers["boolean"] = boolean_unslicer
-unslicers["vocab"]   = vocabDict_unslicer
+unslicers["unicode"]   = Unicode_unslicer
+unslicers["list"]      = list_unslicer
+unslicers["tuple"]     = tuple_unslicer
+unslicers["dict"]      = dict_unslicer
+unslicers["none"]      = none_unslicer
+unslicers["boolean"]   = boolean_unslicer
+unslicers["vocab"]     = vocabDict_unslicer
+unslicers["reference"] = reference_unslicer
 
 # 'unsafe' unslicers
 unslicers["instance"] = pythonInstance_unslicer
