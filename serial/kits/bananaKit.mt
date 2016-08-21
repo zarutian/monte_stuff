@@ -117,11 +117,30 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
 }
 
 def unslicers := [].asMap().diverge()
+# safe unslicers
 unslicers["unicode"] = Unicode_unslicer
 unslicers["list"]    = list_unslicer
 unslicers["tuple"]   = tuple_unslicer
 unslicers["dict"]    = dict_unslicer
+unslicers["none"]    = none_unslicer
+unslicers["boolean"] = boolean_unslicer
+unslicers["vocab"]   = vocabDict_unslicer
 
+# 'unsafe' unslicers
+unslicers["instance"] = pythonInstance_unslicer
+unslicers["module"]   = pythonModule_unslicer
+unslicers["class"]    = pythonClassType_unslicer
+unslicers["method"]   = pythonMethodType_unslicer
+unslicers["function"] = pythonFunctionType_unslicer
+
+# newpb unslicers
+unslicers["call"]     = newpb_call_unslicer
+unslicers["answer"]   = newpb_answer_unslicer
+unslicers["error"]    = newpb_error_unslicer
+unslicers["decref"]   = newpb_decref_unslicer
+unslicers["my-reference"] = newpb_myref_unslicer
+unslicers["your-reference"] = newpb_yourref_unslicer
+unslicers["copyable"] = newpb_copyable_unslicer
 
 def makeUnslicerRecognizer ()[kwargs] {
   
