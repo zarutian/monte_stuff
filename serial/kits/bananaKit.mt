@@ -102,15 +102,16 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
       if ((packet[idx] & 0x80) == 0x80) {
         type_found := true
         type_byte  := packet[idx]
+        idx += 1
         break
       } else {
         header += packet[idx]
         idx += 1
       }
     }
-     
-    idx += 1
+    def body := packet.slice(idx, size)
+    return [fromLittleEndianBase128toNatural(header), type_byte, body]
   }
-  return makeBananaTokenSink_Bytes(makeMappingSink(tupler))
+  return makeBananaTokenSink_Bytes(makeMappingSink(tupler, onward))
 }
 
