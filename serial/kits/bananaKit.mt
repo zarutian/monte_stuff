@@ -116,10 +116,17 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
   return makeBananaTokensSink_Bytes(makeMappingSink(tupler, onward))
 }
 
+
 def makeUnslicerRecognizer ()[kwargs] {
-  def vocabulary := kwargs["vocab"].diverge()
-  def unslicers  := kwargs["unslicers"]
   
+  def unslicers  := kwargs["unslicers"]
+  def rootUnslicer {
+    to doOpen (opentype) :Any {
+      def res := unslicers[opentype[0]]
+    }
+  }
+  
+  def vocabulary := kwargs["vocab"].diverge()
   def unvocaber (packet :bananaTokenTuple) :bananaTokenTuple {
     if (packet[1] == VOCAB) {
       def daStr := vocabulary[packet[0]]
