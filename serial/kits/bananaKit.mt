@@ -112,6 +112,15 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
     def body := packet.slice(idx, size)
     return [fromLittleEndianBase128toNatural(header), type_byte, body]
   }
-  return makeBananaTokenSink_Bytes(makeMappingSink(tupler, onward))
+  return makeBananaTokensSink_Bytes(makeMappingSink(tupler, onward))
+}
+
+def makeUnslicerRecognizer ()[kwargs] {
+  def vocabulary := kwargs["vocab"].diverge()
+  var openings :Nat := 0
+  
+  def recognizer object {
+    to recognize(src :Source, builder) {}
+  }
 }
 
