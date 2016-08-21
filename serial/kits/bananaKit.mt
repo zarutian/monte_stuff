@@ -139,11 +139,18 @@ def makeUnslicerRecognizer ()[kwargs] {
       def mySink as Sink {
         to run(packet :bananaTokenTuple) {
           if (inOpen) {
-            
+            opentype.push(packet)
+            def res := unslicerStack[unslicerStack.size()-1].doOpen(opentype)
+            if (res != null) {
+              unslicerStack.push(res)
+              inOpen := false
+            }
           } else (
             if (packet[1] == OPEN) {
               inOpen := true
               opentype := [].diverge()
+            } else {
+              # in content phase
             }
           }
         }
