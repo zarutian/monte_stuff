@@ -89,9 +89,10 @@ def makeBananaTokensSink_Bytes (onward :Sink) :Sink {
   }
   return makeBufferedSink(b``, completeTo, onward)
 }
+def bananaTokenTuple := Tuple[Nat, Bytes[1], Bytes]
 # makes an sink that takes :Bytes and sinks tuples of the form [header, type, contents] onwards
 def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
-  def tupler (packet :Bytes) :Tuple[Nat, Bytes[1], Bytes] {
+  def tupler (packet :Bytes) :bananaTokenTuple {
     def size = packet.size()
     if (size == 0) { throw.throw("an empty packet was recieved") }
     var header := b``
@@ -119,8 +120,31 @@ def makeUnslicerRecognizer ()[kwargs] {
   def vocabulary := kwargs["vocab"].diverge()
   var openings :Nat := 0
   
-  def recognizer object {
-    to recognize(src :Source, builder) {}
+  def unvocaber (packet :bananaTokenTuple) :bananaTokenTuple {
+    if (packet[1] == VOCAB) {
+      def daStr := vocabulary[packet[0]]
+      return [daStr.size(), STRING, daStr]
+    } else {
+      return packet
+    }
   }
+
+  def recognizer {
+    to recognize(src :Source, builder) {
+      var stack := [].diverge()
+      slicerStack.push(ROOT_unslicer)
+      def mySink as Sink {
+        to run(packet :bananaTokenTuple) {
+          switch (packet[1]) {
+
+          }
+        }
+        to complete() :Vow[Void] {}
+        to abort(problem) :Vow[Void] {}
+      }
+      src(makeBananaTokensSink(makeMappingSink(unvocaber, mySink)))
+    }
+  }
+  return recognizer
 }
 
