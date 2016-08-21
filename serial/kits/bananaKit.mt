@@ -265,7 +265,48 @@ def makeDict_unslicer (protocol) :Unslicer {
     }
   }
 }
-
+def makeNone_unslicer (protocol) :Unslicer {
+  def opentype := "none"
+  return object as Unslicer {
+    "None_unslicer (OPEN(none) CLOSE)"
+    to start(count :Nat) :Void {}
+    to checkToken(typebyte :Bytes[1], size :Nat) :Void {
+      throw.throw("BananaError: None_unslicer does not accept any tokens")
+    }
+    to receiveChild(obj :Any, ready_promise :NullOk[Promise]) :Void {}
+    to receiveClose() :Tuple[Any, Any] {
+      return [null, null]
+    }
+    
+    to doOpen(opentype :List[Str]) :Unslicer {}
+  }
+}
+def makeBoolean_unslicer (protocol) :Unslicer {
+  def opentype := "boolean"
+  var value := null
+  return object as Unslicer {
+    "Boolean_unslicer (OPEN(boolean) (INT(0) | INT(1)) CLOSE)"
+    to start(count :Nat) :Void {}
+    to checkToken(typebyte :Bytes[1], size :Nat) :Void {
+    
+    }
+    to receiveChild(obj :Any, ready_promise :NullOk[Promise]) :Void {
+      assert(!Ref.isPromise(obj))
+      assert(ready_promise == null)
+      assert(Ref.isInteger(obj))
+      value := if (obj == 1) { true } else { false }
+    }
+    to receiveClose() :Tuple[Any, Any] {
+      return [value, null]
+    }
+    
+    to doOpen(opentype :List[Str]) :Unslicer {}
+  }
+}
+def makeVocab_unslicer (protocol) :Unslicer {
+  "OPEN(set-vocab) (INT(vocabNum) STRING(vocabString))* CLOSE"
+  "OPEN(add-vocab) INT(vocabNum) STRING(vocabString) CLOSE"
+}
 def makeReference_unslicer (protocol) :Unslicer {
   def opentype := "reference"
   var finished := false
