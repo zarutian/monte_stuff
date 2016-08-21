@@ -116,6 +116,17 @@ def makeBananaTokensSink (onward :Sink) :Sink[Bytes] {
   return makeBananaTokensSink_Bytes(makeMappingSink(tupler, onward))
 }
 
+# these should live in their own file(s) probably
+
+def makeUnicode_unslicer () {
+  return object {
+    to start(count :Nat) :Void {}
+    to checkToken(typebyte :Bytes[1], size :Nat) :Void {}
+    to receiveChild(obj :Any, ready_promise :Promise) :Void {}
+    to receiveClose() :Void {}
+  }
+}
+
 def unslicers := [].asMap().diverge()
 # safe unslicers
 unslicers["unicode"]   = Unicode_unslicer
