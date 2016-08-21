@@ -149,7 +149,7 @@ def makeList_unslicer (protocol) :Unslicer {
   def list := [].diverge()
   def ready_promises := [].diverge()
   return object as Unslicer {
-    "List_unslicer"
+    "List_unslicer (OPEN(list) value* CLOSE)"
     to start(count :Nat) :Void {}
     to checkToken(typebyte :Bytes[1], size :Nat) :Void {}
     to receiveChild(obj :Any, ready_promise :NullOk[Promise]) :Void {
@@ -181,7 +181,6 @@ def makeList_unslicer (protocol) :Unslicer {
     }
   }
 }
-
 def makeTuple_unslicer (protocol) :Unslicer {
   def opentype := "tuple"
   var list := [].diverge()
@@ -190,6 +189,7 @@ def makeTuple_unslicer (protocol) :Unslicer {
   var finished :Boolean := false
   var [promise, resolver] := Ref.newPromise()
   return object as Unslicer {
+    "Tuple_unslicer (OPEN(tuple) value* CLOSE)"
     to start(count :Nat) :Void {}
     to checkToken(typebyte :Bytes[1], size :Nat) :Void {}
     to receiveChild(obj :Any, ready_promise :NullOk[Promise]) :Void {
@@ -224,6 +224,40 @@ def makeTuple_unslicer (protocol) :Unslicer {
         return [promise, ready_promise]
       }
       return [makeTuple(list), null]
+    }
+    
+    to doOpen(opentype :List[Str]) :Unslicer {
+      return protocol.open(opentype)
+    }
+  }
+}
+def makeDict_unslicer (protocol) :Unslicer {
+  def opentype := "dict"
+  var gettingKey :Boolean := true
+  var key :Any := null
+  var ready_promises := [].diverge()
+  var m :Map := [].asMap().diverge()
+  return object as Unslicer {
+    "Dict_unslicer (OPEN(dict) (key, value)* CLOSE)"
+    to start(count :Nat) :Void {}
+    to checkToken(typebyte :Bytes[1], size :Nat) :Void {}
+    to receiveChild(obj :Any, ready_promise :NullOk[Promise]) :Void {
+      if (ready_promise != null) {
+        ready_promises.push(ready_promise)
+      }
+      if (gettingKey == true) {
+        key := obj
+      } else {
+        m[key] := obj
+      }
+      gettingKey := gettingKey.not()
+    }
+    to recieveClose() :Tuple[Any, Any] {
+      var ready_promise := null
+      if (ready_promises.size() > 0) {
+        ready_promise := asyncAnd(ready_promises)
+      }
+      return [m, ready_promise]
     }
     
     to doOpen(opentype :List[Str]) :Unslicer {
