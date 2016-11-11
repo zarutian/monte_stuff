@@ -23,4 +23,52 @@ packages["ocap/shallow-read-only"] = function (require)
   mt["__index"] = function (proxy, idx)
     return proxy2tab[proxy][idx]
   end
+  local iface = {}
+  iface["make"] = function (tab)
+    local proxy = {}
+    setmetatable(proxy, mt)
+    proxy2tab[proxy] = tab
+    return proxy
+  end
+  return iface
+end
+
+packages["ocap/throwingTable"] = function (require)
+  local throwingTable = {}
+  local mt = {}
+  mt["__newindex"] = function (self, idx, val)
+    error("tried to assign to the throwingTable")
+  end
+  mt["__index"] = function (self, idx)
+    error("tried to index into the throwingTable")
+  end
+  setmetatable(throwingTable, mt)
+  local iface = {}
+  iface["make"] = function ()
+    return throwingTable
+  end
+  return iface
+end
+
+packages["ocap/care-taker"] = function (require)
+  local throwingTable = require("ocap/throwingTable").make()
+  local proxy2tab = {}
+  local mt = {}
+  mt["__newindex"] = function (proxy, idx, val)
+    proxy2tab[proxy][idx] = val
+  end
+  mt["__index"] = function (proxy, idx)
+    return proxy2tab[proxy][idx]
+  end
+  local iface = {}
+  iface["make"] = function (tab)
+    local proxy = {}
+    setmetatable(proxy, mt)
+    proxy2tab[proxy] = tab
+    local revoker = function ()
+      proxy2tab[proxy] = throwingTable
+    end
+    return proxy, revoker
+  end
+  return iface
 end
