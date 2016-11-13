@@ -72,3 +72,17 @@ packages["ocap/care-taker"] = function (require)
   end
   return iface
 end
+
+packages["ocap/revokable-membrane"] = function (require)
+  local throwingTable = require("ocap/throwingTable").make()
+  local proxy2tab     = require("ocap/weakmap").make()
+  local tab2proxy     = require("ocap/weakmap").makeWeakKV()
+  
+  local makeProxy = function (tab)
+    
+  end
+  
+  local iface = {}
+  
+  return iface
+end
