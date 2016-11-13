@@ -75,14 +75,61 @@ end
 
 packages["ocap/revokable-membrane"] = function (require)
   local throwingTable = require("ocap/throwingTable").make()
-  local proxy2tab     = require("ocap/weakmap").make()
-  local tab2proxy     = require("ocap/weakmap").makeWeakKV()
-  
-  local makeProxy = function (tab)
-    
-  end
   
   local iface = {}
+  iface["make"] = function (tabl)
+    local proxy2tab     = require("ocap/weakmap").make()
+    local tab2proxy     = require("ocap/weakmap").makeWeakKV()
+    
+    local mt = {}
+    
+    local makeProxy = function (tab)
+      if tab2proxy[tab] ~= nil then
+        return tab2proxy[tab]
+      end
+      if type(tab) == "Number" then
+        return tab
+      elseif type(tab) == "String" then
+        return tab
+      end
+      local proxy = {}
+      setmetatable(proxy, mt)
+      tab2proxy[tab] = proxy
+      proxy2tab[proxy] = tab
+      return proxy
+    end
+    local unwrap = function (proxy)
+      if proxy2tab[proxy] ~= nil then
+        return proxy2tab[proxy]
+      else
+        return proxy
+      end
+    end
+    local revoked = false
+    local revoker = function ()
+      revoked = true
+    end
   
+    mt["__newindex"] = function (proxy, idx, val)
+      if revoked == true then
+        return nil
+      end
+      local real_idx = unwrap(idx)
+      local real_val = unwrap(val)
+      local tab      = unwrap(proxy)
+      tab[real_idx] = real_val
+      return nil
+    end
+    mt["__index"] = function (proxy, idx)
+      if revoked == true then
+        return throwingTable
+      end
+      local real_idx = unwrap(idx)
+      local tab      = unwrap(proxy)
+      return makeProxy(tab[real_idx])
+    end
+    
+    return makeProxy(tabl), revoker
+  end
   return iface
 end
