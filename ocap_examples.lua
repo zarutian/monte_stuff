@@ -15,7 +15,7 @@ packages["ocap/weakmap"] = function (require)
 end
 
 packages["ocap/shallow-read-only"] = function (require)
-  local proxy2tab = {}
+  local proxy2tab = require("ocap/weakmap").make()
   local mt = {}
   mt["__newindex"] = function (proxy, idx, val) 
     -- simply ignored
@@ -52,7 +52,7 @@ end
 
 packages["ocap/care-taker"] = function (require)
   local throwingTable = require("ocap/throwingTable").make()
-  local proxy2tab = {}
+  local proxy2tab =     require("ocap/weakmap").make()
   local mt = {}
   mt["__newindex"] = function (proxy, idx, val)
     proxy2tab[proxy][idx] = val
