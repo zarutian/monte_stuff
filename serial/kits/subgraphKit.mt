@@ -2,13 +2,14 @@
 
 import 'serialize/guards/Uncaller' =~ [ => Uncaller]
 import 'serialize/guards/Portrayal' =~ [ => Portrayal]
+import 'serialize/guards/Builder' =~ [ => Builder]
 import 'guards/Near' =~ [ => Near]
 import 'guards/CycleBreaker' =~ [ => CycleBreaker]
 import 'utils/makeCycleBreaker' =~ [=> makeCycleBreaker]
 
 def makeUnevaler (uncallerList :List[Uncaller], unscopeLayout :CycleBreaker) :Near {
   object unevaler {
-    to recognize(root, builder) :(def Root := builder.getRootType()) {
+    to recognize(root :Any, builder :Builder) :(def Root := builder.getRootType()) {
       def Node := builder.getNodeType()
       def uncallers := uncallerList.snapshot()
       def unscope := unscopeLayout.snapshot()
