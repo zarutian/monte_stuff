@@ -57,7 +57,22 @@ def makeUnevaler (uncallerList :List[Uncaller], unscopeLayout :CycleBreaker) :Ne
         }
         throw(`Can't uneval ${M.toQuote(obj)}`)
       }
-
+      bind generate(obj) :Node {
+        escape notFound {
+          def varName :Str := unscope.fetch(obj, notFound) 
+          return builder.buildImport(varName)
+        }
+        if (temps.fetch(obj, fn {}) =~ tempIndex :notNull) {
+          return builder.buildIbid(tempIndex)
+        }
+                
+        # No temp and no import; create a name for this unknown object
+        def promIndex := builder.buildPromise()
+        temps[obj] := promIndex
+        def rValue := genObject(obj)
+        return builder.buildDefrec(promIndex+1, rValue)
+      }
+      
     }
   }
   return unevaler
