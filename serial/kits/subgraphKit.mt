@@ -14,7 +14,20 @@ def makeUnevaler (uncallerList :List[Uncaller], unscopeLayout :CycleBreaker) :Ne
       def unscope := unscopeLayout.snapshot()
       # Map from objects to temp indexes the builder knows.
       def temps := makeCycleBreaker().diverge()
-
+      def generate  # Name scoped but not yet bound
+      # traverse an uncall portrayal
+      def genCall(rec, verb :String, args :List, kwargs :Map) :Node {
+        def recExpr := generate(rec)
+        var argExprs := []
+        for arg in args {
+          argExprs with= generate(arg)
+        }
+        var kwargExprs := [].asMap()
+        for [k, w] in kwargs {
+          kwargExprs with= [generate(k), generate(w)]
+        }
+        return builder.buildCall(recExpr, verb, argExprs, kwargExprs)
+      }
     }
   }
   return unevaler
