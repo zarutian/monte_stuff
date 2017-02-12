@@ -50,8 +50,8 @@ def makeUnevaler (uncallerList :List[Uncaller], unscopeLayout :CycleBreaker) :Ne
         }
         # try one uncaller after another until a Portrayal is returned instead of null
         for uncaller in uncallers {
-          if (uncaller.optUncall(obj) =~ [rec, verb, args]) {
-            return genCall(rec, verb, args)
+          if (uncaller.optUncall(obj) =~ [rec, verb, args, kwargs] :Portrayal) {
+            return genCall(rec, verb, args, kwargs)
           }
         }
         throw(`Can't uneval ${M.toQuote(obj)}`)
