@@ -405,6 +405,20 @@ object msgpckKit {
         }
         match ==4 {
           # GCExport
+          def [consumed_export, export_pos] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_export == 0) { throw.throw(ejector, "zero sized export pos!") }
+          if (export_pos.kind() != "msgpck_uint") { throw.throw(ejector, "export pos is not a number!") }
+          buffer := buffer.slize(consumed_export, buffer.size())
+          def [consumed_wd, wireDelta] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_wd == 0) { throw.throw(ejector, "zero sized wire delta!") }
+          if (wireDelta.kind() != "msgpck_uint") { throw.throw(ejector, "wire delta is not a number!") }
+          buffer := buffer.slize(consumed_wd, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only two things should be in a GCExport!") }
+          def GCExport := [export_pos, wireDelta]
+          return object {
+            to kind () :Any { return "GCExport" }
+            to get ()  :Any { return GCExport }
+          }
         }
         match ==5 {
           # GCAnswer
