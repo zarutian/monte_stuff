@@ -491,7 +491,7 @@ object msgpckKit {
           if (import_pos.kind() != "msgpck_uint") { throw.throw(ejector, "import pos is not a number!") }
           buffer := buffer.slice(consumed_imp, buffer.size())
           if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Import!") }
-          def Imported := [answer_pos]
+          def Imported := [import_pos]
           return object {
             to kind () :Any { return "Import" }
             to get ()  :Any { return Imported }
@@ -499,6 +499,16 @@ object msgpckKit {
         }
         match ==11 {
           # Question
+          def [consumed_que, question_pos] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_que == 0) { throw.throw(ejector, "zero sized question pos!") }
+          if (question_pos.kind() != "msgpck_uint") { throw.throw(ejector, "question pos is not a number!") }
+          buffer := buffer.slice(consumed_imp, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Question!") }
+          def Question := [question_pos]
+          return object {
+            to kind () :Any { return "Question" }
+            to get ()  :Any { return Question }
+          }
         }
         match ==12 {
           # newFarDesc
