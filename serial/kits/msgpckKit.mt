@@ -639,9 +639,47 @@ object msgpckKit {
         }
         match ==17 {
           # LocatorUnumDesc
+          if (buffer.size() != 0) { throw.throw(ejector, "LocatorUnumDesc should be empty!") }
         }
         match ==18 {
           # SturdyRef
+          def [consumed_loc, locator] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_loc == 0) { throw.throw(ejector, "zero sized locator!") }
+          buffer := buffer.slice(consumed_loc, buffer.size())
+          def [consumed_sp, searchPath] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_sp == 0) { throw.throw(ejector, "zero sized search path! (should be at least be an empty array)") }
+          if (searchPath.kind() != "msgpck_Array") { throw.throw(ejector, "search path must be an array!") }
+          buffer := buffer.slice(consumed_sp, buffer.size())
+          def [consumed_hostId, hostId] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_hostId == 0) { throw.throw(ejector, "zero sized host VatId!") }
+          # todo: add other kinds of cryptohashes
+          if (hostId.kind() != "Sha256_cryptohash") { throw.throw(ejector, "VatID is not a Sha256 hash!") }
+          buffer := buffer.slice(consumed_hostId, buffer.size())
+          def [consumed_sn, swissNum] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_sn == 0) { throw.throw(ejector, "zero sized swissNum!") }
+          # todo: add other kinds of cryptohashes
+          if (swissNum.kind() != "Sha256_cryptohash") { throw.throw(ejector, "swissNum is not a Sha256 hash!") }
+          buffer := buffer.slice(consumed_sn, buffer.size())
+          var expiration :Any
+          if (buffer.size() > 0) {
+            def [consumed_exp, exp] := msgpckParser.parse(buffer, ejector, extHandler)
+            buffer := buffer.slice(consumed_exp, buffer.size())
+            expiration := object {
+              to kind () :Any { return "ISO8601_Date" }
+              to get ()  :Any { return exp }
+            }
+          } else {
+            expiration := object {
+              to kind () :Any { return "ISO8601_Date" }
+              to get ()  :Any { return "empty" }
+            }
+          }
+          if (buffer.size() != 0) { throw.throw(ejector, "there should be three or four things in an sturdyref!") }
+          def sturdyref := [locator, searchPath, hostId, swissNum, expiration]
+          return object {
+            to kind () :Any { return "SturdyRef" }
+            to get ()  :Any { return sturdyref }
+          }
         }
         match ==19 {
           # crypto hash. (SHA256)
