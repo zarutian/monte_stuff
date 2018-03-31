@@ -536,6 +536,24 @@ object msgpckKit {
         }
         match ==13 {
           # newRemotePromiseDesc
+          def [consumed_imp, import_pos] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_imp == 0) { throw.throw(ejector, "zero sized import pos!") }
+          if (import_pos.kind() != "msgpck_uint") { throw.throw(ejector, "import pos is not a number!") }
+          buffer := buffer.slice(consumed_imp, buffer.size())
+          def [consumed_rdr, rdr_pos] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_rdr == 0) { throw.throw(ejector, "zero sized rdr pos!") }
+          if (rdr_pos.kind() != "msgpck_uint") { throw.throw(ejector, "rdr pos is not a number!") }
+          buffer := buffer.slice(consumed_rdr, buffer.size())
+          def [consumed_rdrBase, rdrBase] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_rdrBase == 0) { throw.throw(ejector, "zero sized rdrBase!") }
+          if (rdrBase.kind() != "msgpck_Binary") { throw.throw(ejector, "rdrBase is not a Binary!") }
+          buffer := buffer.slice(consumed_rdrBase, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only three things should be in a newRemotePromiseDesc!") }
+          def newRemotePromiseDesc := [import_pos, rdr_pos, rdrBase]
+          return object {
+            to kind () :Any { return "newRemotePromiseDesc" }
+            to get ()  :Any { return newRemotePromiseDesc }
+          }
         }
         match ==14 {
           # newPromise3Desc
