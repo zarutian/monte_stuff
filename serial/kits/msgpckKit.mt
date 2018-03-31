@@ -435,6 +435,16 @@ object msgpckKit {
         }
         match ==6 {
           # Shutdown
+          def [consumed_rc, recieved_count] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_rc == 0) { throw.throw(ejector "zero sized recieved count!") }
+          if (recieved_count.kind() != "msgpck_uint") { throw.throw(ejector, "recieved count is not a number!") }
+          buffer := buffer.slize(consumed_rc, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a Shutdown!") }
+          def Shutdown := [recieved_count]
+          return object {
+            to kind () :Any { return "Shutdown" }
+            to get ()  :Any { return Shutdown }
+          }
         }
         match ==7 {
           # Terminated
