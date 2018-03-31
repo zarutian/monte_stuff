@@ -683,6 +683,11 @@ object msgpckKit {
         }
         match ==19 {
           # crypto hash. (SHA256)
+          if (buffer.size() != 32) { throw.throw(ejector, "bytes inside an SHA256 cryptohash mush be 32") }
+          return object {
+            to kind () :Any { return "Sha256_cryptohash" }
+            to get ()  :Any { return bytes }
+          }
         }
         match ==20 {
           # ActiveCapCert
