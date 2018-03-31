@@ -473,6 +473,16 @@ object msgpckKit {
         }
         match ==9 {
           # Answer
+          def [consumed_ap, answer_pos] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_ap == 0) { throw.throw(ejector, "zero sized answer pos!") }
+          if (answer_pos.kind() != "msgpck_uint") { throw.throw(ejector, "answer pos is not a number!") }
+          buffer := buffer.slice(consumed_ap, buffer.size())
+          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a Answer!") }
+          def Answer := [answer_pos]
+          return object {
+            to kind () :Any { return "Answer" }
+            to get ()  :Any { return Answer }
+          }
         }
         match ==10 {
           # Import
