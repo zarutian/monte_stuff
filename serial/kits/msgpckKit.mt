@@ -460,6 +460,16 @@ object msgpckKit {
         }
         match ==8 {
           # Export
+          def [consumed_export, export_pos] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_export == 0) { throw.throw(ejector, "zero sized export pos!") }
+          if (export_pos.kind() != "msgpck_uint") { throw.throw(ejector, "export pos is not a number!") }
+          buffer := buffer.slice(consumed_export, buffer.size())
+          if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in an Export!") }
+          def Exported := [export_pos]
+          return object {
+            to kind () :Any { return "Export" }
+            to get ()  :Any { return Exported }
+          }
         }
         match ==9 {
           # Answer
