@@ -408,11 +408,11 @@ object msgpckKit {
           def [consumed_export, export_pos] := msgpckParser.parse(buffer, ejector, extHandler)
           if (consumed_export == 0) { throw.throw(ejector, "zero sized export pos!") }
           if (export_pos.kind() != "msgpck_uint") { throw.throw(ejector, "export pos is not a number!") }
-          buffer := buffer.slize(consumed_export, buffer.size())
+          buffer := buffer.slice(consumed_export, buffer.size())
           def [consumed_wd, wireDelta] := msgpckParser.parse(buffer, ejector, extHandler)
           if (consumed_wd == 0) { throw.throw(ejector, "zero sized wire delta!") }
           if (wireDelta.kind() != "msgpck_uint") { throw.throw(ejector, "wire delta is not a number!") }
-          buffer := buffer.slize(consumed_wd, buffer.size())
+          buffer := buffer.slice(consumed_wd, buffer.size())
           if (buffer.size() != 0) { throw.throw(ejector, "only two things should be in a GCExport!") }
           def GCExport := [export_pos, wireDelta]
           return object {
@@ -425,7 +425,7 @@ object msgpckKit {
           def [consumed_ap, answer_pos] := msgpckParser.parse(buffer, ejector, extHandler)
           if (consumed_ap == 0) { throw.throw(ejector, "zero sized answer pos!") }
           if (answer_pos.kind() != "msgpck_uint") { throw.throw(ejector, "answer pos is not a number!") }
-          buffer := buffer.slize(consumed_ap, buffer.size())
+          buffer := buffer.slice(consumed_ap, buffer.size())
           if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a GCAnswer!") }
           def GCAnswer := [answer_pos]
           return object {
@@ -436,9 +436,9 @@ object msgpckKit {
         match ==6 {
           # Shutdown
           def [consumed_rc, recieved_count] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_rc == 0) { throw.throw(ejector "zero sized recieved count!") }
+          if (consumed_rc == 0) { throw.throw(ejector, "zero sized recieved count!") }
           if (recieved_count.kind() != "msgpck_uint") { throw.throw(ejector, "recieved count is not a number!") }
-          buffer := buffer.slize(consumed_rc, buffer.size())
+          buffer := buffer.slice(consumed_rc, buffer.size())
           if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a Shutdown!") }
           def Shutdown := [recieved_count]
           return object {
@@ -448,6 +448,15 @@ object msgpckKit {
         }
         match ==7 {
           # Terminated
+          def [consumed_prob, problem] := msgpckParser.parse(buffer, ejector, extHandler)
+          if (consumed_prob == 0) { throw.throw(ejector, "zero sized problem!") }
+          buffer := buffer.slice(consumed_prob, buffer.size())
+          if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in a Terminated!") }
+          def Terminated := [problem]
+          return object {
+            to kind () :Any { return "Terminated" }
+            to get ()  :Any { return Terminated }
+          }
         }
         match ==8 {
           # Export
