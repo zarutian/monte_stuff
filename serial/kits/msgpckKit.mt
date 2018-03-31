@@ -520,6 +520,8 @@ object msgpckKit {
           def [consumed_hash, hash] := msgpckParser.parse(buffer, ejector, extHandler)
           var SwissHash :Any
           if (consumed_hash > 0) {
+            if (hash.kind() != "Sha256_cryptohash") { throw.throw(ejector, "incorrect kind of swissHash") }
+            # todo: update this later with other cryptohash algorithms.
             SwissHash := hash
             buffer := buffer.slice(consumed_hash, buffer.size())
           } else {
