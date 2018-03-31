@@ -691,15 +691,23 @@ object msgpckKit {
         }
         match ==20 {
           # ActiveCapCert
+          throw.throw(ejector, "reserved for ActiveCapCert")
         }
         match ==21 {
           # PostalRefACC
+          throw.throw(ejector, "reserved for PostalRefs that use ActiveCapCerts as carrier")
         }
         match ==22 {
           # Macaroony
+          throw.throw(ejector, "reserved for Macaroons or Macaroonesque things")
         }
         match ==23 {
           # PostalRefM
+          throw.throw(ejector, "reserved for PostalRefs that use Macaroons or Macaroonesque things as carrier")
+        }
+        match ==24 {
+          # crypto hash (Blake2b)
+          throw.throw(ejector, "reserved for Blake2b cryptographic hashes")
         }
       }      
     }
