@@ -583,9 +583,59 @@ object msgpckKit {
         }
         match ==15 {
           # RemoteDeliver
+          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
+          buffer := buffer.slice(consumed_rec, buffer.size())
+          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
+          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
+          buffer := buffer.slice(consumed_ver, buffer.size())
+          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
+          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
+          buffer := buffer.slice(consumed_arg, buffer.size())
+          var kwargs := null
+          var consumed_kwa := 0
+          if (buffer.size() > 0) {
+            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
+            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
+            buffer := buffer.slice(consumed_kwa, buffer.size())
+          } else {
+            kwargs := [].asMap()
+          }
+          def RemoteDeliver := [recipiant, verb, args, kwargs]
+          return object {
+            to kind () :Any { return "RemoteDeliver" }
+            to get ()  :Any { return RemoteDeliver }
+          }
         }
         match ==16 {
           # RemoteCall
+          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
+          buffer := buffer.slice(consumed_rec, buffer.size())
+          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
+          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
+          buffer := buffer.slice(consumed_ver, buffer.size())
+          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
+          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
+          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
+          buffer := buffer.slice(consumed_arg, buffer.size())
+          var kwargs := null
+          var consumed_kwa := 0
+          if (buffer.size() > 0) {
+            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
+            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
+            buffer := buffer.slice(consumed_kwa, buffer.size())
+          } else {
+            kwargs := [].asMap()
+          }
+          def RemoteCall := [recipiant, verb, args, kwargs]
+          return object {
+            to kind () :Any { return "RemoteCall" }
+            to get ()  :Any { return RemoteCall }
+          }
         }
         match ==17 {
           # LocatorUnumDesc
