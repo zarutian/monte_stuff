@@ -38,7 +38,7 @@ object makeCryptobrand {
       
       def surgeon := theSurgeon.diverge()
       def exits := [].asMap().diverge()
-      var count := 0
+      var counter := 0
       # need an uncaller at the bottom of the uncallers list,
       # that uncaller just adds things that cant be serialized by this surgeon
       # note: this can accidentally defeat the whole purpose of this cryptobrand
