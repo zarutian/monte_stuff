@@ -4,17 +4,41 @@ exports(msgpckKit)
 # utility streamcaps that might be moved elsewhere.
 
 object makeBytesBufferSrc {
-  to run (src :ByteSrc, numOfBytesWanted :Nat) :Tuple[Sink, Source] {
+  to run (src :ByteSrc, numOfBytesWanted :Nat) :Source {
     var count := numOfBytesWanted
-    var buffer := [].diverge()
-    
+    def buffer := [].diverge()
+    var inUse :Bool := false
     object my_src {
-    
+      to run(sink :Sink) :Vow[Void] {
+        if (inUse) { throw("This BytesBufferSrc is already in use by another sink!") }
+        inUse := true
+        object my_sink {
+          to run(datum :Byte) :Vow[Void] {
+            buffer.push(datum)
+            count -= 1
+            if (count > 0) {
+              return src <- run(my_sink) # Ask for more
+            } else {
+              return sink <- run(buffer.snapshot())
+            }
+          }
+          to complete() :Vow[Void] {
+            # success?
+            if (count > 0) {
+              return sink <- abort("BytesBuffer count not fullfilled!")
+            } else {
+              return sink <- complete()
+            }
+          }
+          to abort(problem :Any) :Vow[Void] {
+            # failure.
+            return sink <- abort(problem)
+          }
+        }
+        return src <- run(my_sink) # Ask for the first one
+      }
     }
-    object my_sink {
-    
-    }
-    return [my_sink, my_src]
+    return my_src
   }
 }
 
