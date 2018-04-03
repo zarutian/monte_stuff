@@ -286,6 +286,22 @@ object makeMsgpckParserSrc {
                     }
                     return bin_len_src <- run(my_bin_32_sink)
                   }
+                  match ==0xC7 {
+                    # ext 8
+                    object my_ext_8_sink {
+                      to run(baeti :Bytes[1]) {
+                        def numberOfBytes := baeti.asInteger()
+                        return parseExt(byteSrc, numberOfBytes, extHandler, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return byteSrc <- run(my_ext_8_sink)
+                  }
                 }
               }
             }
