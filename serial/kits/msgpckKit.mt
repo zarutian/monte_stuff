@@ -66,13 +66,25 @@ def makeBool(boolean) :Any {
     to get ()  :Any { return boolean }
   }
 }
-def parseString(bufferIn :BytesSrc, numBytes :Nat, ejector) :Vow[Any] {
-  if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
-  def str := UTF8.decode(bufferIn)
-  return [numBytes, object {
-    to kind () :Any { return "msgpck_utf8Str" }
-    to get ()  :Any { return str }
-  }]
+def parseString(bufferIn :BytesSrc, numBytes :Nat, consumer :Sink) :Vow[Void] {
+  def str_src := makeBytesBufferSrc(bufferIn, numBytes)
+  object my_sink {
+    to run(bytes :Bytes) :Vow[Void] {
+      def str := UTF8.decode(bytes)
+      object str_wrap {
+        to kind () :Any { return "msgpck_utf8Str" }
+        to get ()  :Any { return str }
+      }
+      return consumer <- run(str_wrap)
+    }
+    to complete() :Vow[Void] {
+      return consumer <- complete()
+    }
+    to abort(problem :Any) :Vow[Void] {
+      return consumer <- abort(problem)
+    }
+  }
+  return str_src <- run(my_sink)
 }
 def parseBin(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
   if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
