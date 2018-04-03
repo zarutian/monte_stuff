@@ -519,7 +519,124 @@ object makeMsgpckParserSrc {
                     # takes 17 bytes
                     return parseExt(byteSrc, 17, extHandler, consumer)
                   }
-                  
+                  match ==0xD9 {
+                    # str 8
+                    object my_str_8_sink {
+                      to run(byte :Bytes[1]) :Vow[Void] {
+                        def numberOfBytes := byte.asInteger()
+                        return parseString(byteSrc, numberOfBytes, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return byteSrc <- run(my_str_8_sink)
+                  }
+                  match ==0xDA {
+                    # str 16
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 2)
+                    object my_str_16_sink {
+                      to run(bytes :Bytes[2]) :Vow[Void] {
+                        def numberOfBytes := byte.asInteger()
+                        return parseString(byteSrc, numberOfBytes, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_str_16_sink) 
+                  }
+                  match ==0xDB {
+                    # str 32
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_str_32_sink {
+                      to run(bytes :Bytes[4]) :Vow[Void] {
+                        def numberOfBytes := byte.asInteger()
+                        return parseString(byteSrc, numberOfBytes, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_str_32_sink)                     
+                  }
+                  match ==0xDC {
+                    # array 16
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 2)
+                    object my_array_16_sink {
+                      to run(bytes :Bytes[2]) :Vow[Void] {
+                        def numberOfElements := byte.asInteger()
+                        return parseArray(my_src, numberOfElements, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_array_16_sink)                     
+                  }
+                  match ==0xDD {
+                    # array 32
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_array_32_sink {
+                      to run(bytes :Bytes[4]) :Vow[Void] {
+                        def numberOfElements := byte.asInteger()
+                        return parseArray(my_src, numberOfElements, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_array_32_sink)                     
+                  }
+                  match ==0xDE {
+                    # map 16
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 2)
+                    object my_map_16_sink {
+                      to run(bytes :Bytes[2]) :Vow[Void] {
+                        def numberOfElements := byte.asInteger()
+                        return parseMap(my_src, numberOfElements, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_map_16_sink)                     
+                  }  
+                  match ==0xDF {
+                    # map 32
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_map_32_sink {
+                      to run(bytes :Bytes[4]) :Vow[Void] {
+                        def numberOfElements := byte.asInteger()
+                        return parseMap(my_src, numberOfElements, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_map_32_sink)           
+                  }
                 }
               }
             }
