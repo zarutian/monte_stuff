@@ -204,10 +204,16 @@ object makeMsgpckParserSrc {
       to run(consumer :Sink) {
         object my_first_sink {
           to run(byte :Byte) :Vow[Void] {
-      
+            if ((byte & 0x80) == 0x00) {
+              # positive fixint
+              return consumer <- run(makeInteger(byte & 0x7f))
+            } elseif ((byte & 0xE0) == 0xE0) {
+              # negative fixint
+              return consumer <- run(makeInteger((byte & 0x1f).negate()))
+            }
           }
-          return byteSrc <- run(my_first_sink)
         }
+        return byteSrc <- run(my_first_sink)
       }
     }
     return my_src
