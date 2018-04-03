@@ -132,29 +132,32 @@ def parseExt(bufferIn :BytesSrc, numBytes :Nat, extHandler :Any, consumer :Sink)
   }
   return bufferIn <- run(my_first_sink)
 }
-def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
-  var buffer := bufferIn
+
+def parseMap(parserSrc :MsgpckParserSrc, numElements :Nat, consumer :Sink) :Vow[Void] {
   def map := [].asMap().diverge()
-  var consumed :Nat := 0
-  var key, val := null, null
-  var tmp_con :Nat := 0
-  var tmp_it :Any := null
-  for (i in (0..numElements) {
-    [tmp_con, tmp_it] := msgpckParser.parse(buffer, ejector)
-    buffer := buffer.slice(tmp_con, (buffer.size() - 1))
-    key := tmp_it
-    consumed += tmp_con
-    [tmp_con, tmp_it] := msgpckParser.parse(buffer, ejector)
-    buffer := buffer.slice(tmp_con, (buffer.sice() - 1))
-    val := tmp_it
-    consumed += tmp_con
-    map[key] := val
+  var elementsLeft := numElements
+  object my_key_sink {
+    to run(key :Any) :Vow[Void] {
+      object my_value_sink {
+        to run(value :Any) :Vow[Void] {
+          map[key] := value
+          elementsLeft -= 1
+          if (elementsLeft > 0) {
+            return parserSrc <- run(my_key_sink)
+          } else {
+            def theMap := map.snapshot()
+            object map_wrap {
+              to kind () :Any { return "msgpck_Map" }
+              to get ()  :Any { return theMap }
+            }
+            return consumer <- run(map_wrap)
+          }
+        }
+      }
+      return parserSrc <- run(my_value_sink)
+    }
   }
-  def theMap := map.snapshot()
-  return [consumed, object {
-    to kind () :Any { return "msgpck_Map" }
-    to get ()  :Any { return theMap } 
-  }]
+  return parserSrc <- run(my_key_sink)
 }
 def parseArray (bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   var buffer := bufferIn
