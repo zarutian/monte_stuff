@@ -319,6 +319,23 @@ object makeMsgpckParserSrc {
                     }
                     return ext_len_src <- run(my_ext_16_sink)
                   }
+                  match ==0xC9 {
+                    # ext 32
+                    def ext_len_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_ext_32_sink {
+                      to run(bytes :Bytes[4]) :Vow[Void] {
+                        def numberOFBytes := bytes.asInteger()
+                        return parseExt(byteSrce, numberOfBytes, extHandler, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return ext_len_src <- run(my_ext_32_sink)
+                  }
                 }
               }
             }
