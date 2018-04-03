@@ -325,7 +325,7 @@ object makeMsgpckParserSrc {
                     object my_ext_32_sink {
                       to run(bytes :Bytes[4]) :Vow[Void] {
                         def numberOFBytes := bytes.asInteger()
-                        return parseExt(byteSrce, numberOfBytes, extHandler, consumer)
+                        return parseExt(byteSrc, numberOfBytes, extHandler, consumer)
                       }
                       to complete() :Vow[Void] {
                         return consumer <- complete()
@@ -494,6 +494,32 @@ object makeMsgpckParserSrc {
                     }
                     return bytes_src <- run(my_int_64_sink)
                   }
+                  match ==0xD4 {
+                    # fixext 1
+                    # takes 2 bytes
+                    return parseExt(byteSrc, 2, extHandler, consumer)
+                  }
+                  match ==0xD5 {
+                    # fixext 2
+                    # takes 3 bytes
+                    return parseExt(byteSrc, 3, extHandler, consumer)
+                  }
+                  match ==0xD6 {
+                    # fixext 4
+                    # takes 5 bytes
+                    return parseExt(byteSrc, 5, extHandler, consumer)
+                  }
+                  match ==0xD7 {
+                    # fixext 8
+                    # takes 9 bytes
+                    return parseExt(byteSrc, 9, extHandler, consumer)
+                  }
+                  match ==0xD8 {
+                    # fixext 16
+                    # takes 17 bytes
+                    return parseExt(byteSrc, 17, extHandler, consumer)
+                  }
+                  
                 }
               }
             }
