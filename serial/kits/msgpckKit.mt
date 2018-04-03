@@ -368,6 +368,37 @@ object makeMsgpckParserSrc {
                     }
                     return bytes_src <- run(my_float64_sink)
                   }
+                  match ==0xCC {
+                    # uint8
+                    object my_uint_8_sink {
+                      to run(byte :Bytes[1]) {
+                        return consumer <- run(makeUint(byte))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return byteSrc <- run(my_uint_8_sink)
+                  }
+                  match ==0xCD {
+                    # uint16
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 2)
+                    object my_uint_16_sink {
+                      to run(bytes :Bytes[2]) :Vow[Void] {
+                        return consumer <- run(makeUint(bytes))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_uint_16_sink)
+                  }
                 }
               }
             }
