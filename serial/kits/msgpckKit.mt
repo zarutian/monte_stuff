@@ -105,12 +105,32 @@ def parseBin(bufferIn :BytesSrc, numBytes :Nat, consumer :Sink) :Vow[Void] {
   }
   return bin_src <- run(my_sink)
 }
-def parseExt(bufferIn :Bytes, numBytes :Nat, ejector, extHandler) :Tuple[Nat, Any] {
-  if (bufferIn.sice() < 1) { throw.eject(ejector, "") }
-  if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
-  def extNr  := bufferIn[0].asInteger()
-  def buffer := bufferIn.slice(1, bufferIn.size())
-  return [numBytes, extHandler(extNr, buffer, ejector)]
+def parseExt(bufferIn :BytesSrc, numBytes :Nat, extHandler :Any, consumer :Sink) :Vow[Void] {
+  object my_first_sink {
+    to run (byte :Bytes[1]) :Vow[Void] {
+      def extNr := byte.asInteger()
+      def ext_src := makeBytesBufferSrc(bufferIn, numBytes)
+      object my_second_sink {
+        to run (bytes :Bytes) :Vow[Void] {
+          return extHandler <- run(extNr, bytes, consumer)
+        }
+        to complete () :Vow[Void] {
+          return consumer <- complete()
+        }
+        to abort (problem :Any) :Vow[Void] {
+          return consumer <- abort(problem)
+        }
+      }
+      return ext_src <- run(my_second_sink)
+    }
+    to complete () :Vow[Void] {
+      return conumser <- complete()
+    }
+    to abort (problem :Any) :Vow[Void] {
+      return consumer <- abort(problem)
+    }
+  }
+  return bufferIn <- run(my_first_sink)
 }
 def parseMap(bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
   var buffer := bufferIn
