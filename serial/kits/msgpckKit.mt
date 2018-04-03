@@ -269,6 +269,23 @@ object makeMsgpckParserSrc {
                     }
                     return bin_len_src <- run(my_bin_16_sink)
                   }
+                  match ==0xC6 {
+                    # bin 32
+                    def bin_len_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_bin_32_sink {
+                      to run(bytes :Bytes) :Vow[Void] {
+                        def numberOfBytes := bytes.asInteger()
+                        return parseBin(byteSrc, numberOfBytes, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bin_len_src <- run(my_bin_32_sink)
+                  }
                 }
               }
             }
