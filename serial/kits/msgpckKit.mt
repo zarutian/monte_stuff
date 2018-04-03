@@ -431,7 +431,69 @@ object makeMsgpckParserSrc {
                     }
                     return bytes_src <- run(my_uint_64_sink)
                   }
-                  
+                  match ==0xD0 {
+                    # int 8
+                    object my_int_8_sink {
+                      to run(byte :Bytes[1]) :Vow[Void] {
+                        return consumer <- run(makeInt(byte))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return byteSrc <- run(my_int_8_sink)
+                  }
+                  match ==0xD1 {
+                    # int 16
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 2)
+                    object my_int_16_sink {
+                      to run(bytes :Bytes[2]) :Vow[Void] {
+                        return consumer <- run(makeInt(bytes))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_int_16_sink)
+                  }
+                  match ==0xD2 {
+                    # int 32
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_int_32_sink {
+                      to run(bytes :Bytes[4]) :Vow[Void] {
+                        return consumer <- run(makeInt(bytes))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_int_32_sink)
+                  }
+                  match ==0xD3 {
+                    # int 64
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 8)
+                    object my_int_64_sink {
+                      to run(bytes :Bytes[8]) :Vow[Void] {
+                        return consumer <- run(makeInt(bytes))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_int_64_sink)
+                  }
                 }
               }
             }
