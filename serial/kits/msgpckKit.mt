@@ -213,8 +213,19 @@ object makeMsgpckParserSrc {
             } else {
               if ((byte & 0xF0) == 0x80) {
                 # fixmap
-                def numberOfElements := (byte & 0x0F).asIntger()
+                def numberOfElements := (byte & 0x0F).asInteger()
                 return parseMap(my_src, numberOfElements, consumer)
+              } elseif ((byte & 0xF0) == 0x90) {
+                # fixarray
+                def numberOfElements := (byte & 0x0F).asInteger()
+                return parseArray(my_src, numberOfElements, consumer)
+              } else {
+                switch (byte) {
+                  match ==0xC0 {
+                    # nil
+                    return consumer <- run(makeNil())
+                  }
+                }
               }
             }
           }
