@@ -42,6 +42,24 @@ object makeBytesBufferSrc {
   }
 }
 
+object makeByteSrcFromBuffer {
+  to run(buffer :Bytes) :Src {
+    var index := 0
+    object my_src {
+      to run(consumer :Sink) :Vow[Void] {
+        if (index < buffer.size()) {
+          def byte := buffer[index]
+          index += 1
+          return consumer <- run(byte)
+        } else {
+          return consumer <- complete()
+        }
+      }
+    }
+    return my_src
+  }
+}
+
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
 def msgpckParser
