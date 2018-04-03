@@ -153,28 +153,48 @@ def parseMap(parserSrc :MsgpckParserSrc, numElements :Nat, consumer :Sink) :Vow[
             return consumer <- run(map_wrap)
           }
         }
+        to complete() :Vow[Void] {
+          return consumer <- complete()
+        }
+        to abort(problem :Any) :Vow[Void] {
+          return consumer <- abort(problem)
+        }
       }
       return parserSrc <- run(my_value_sink)
+    }
+    to complete() :Vow[Void] {
+      return consumer <- complete()
+    }
+    to abort(problem :Any) :Vow[Void] {
+      return consumer <- abort(problem)
     }
   }
   return parserSrc <- run(my_key_sink)
 }
-def parseArray (bufferIn :Bytes, numElements :Nat, ejector) :Tuple[Nat, Any] {
-  var buffer := bufferIn
+def parseArray (parserSrc :MsgpckParserSrc, numElements :Nat, consumer :Sink) :Vow[Void] {
   def arr := [].diverge()
-  var consumed :Nat := 0
-  var tmp_con :Nat := 0
-  var tmp_it  :Any := null
-  for (i in (0..numElements) {
-    [tmp_con, tmp_it] := msgpckParser.parse(buffer, ejector)
-    buffer := buffer.slice(tmp_con, (buffer.size() - 1))
-    consumed += tmp_con
-    arr.push(tmp_it)
-  }
-  def theArr := arr.snapshot()
-  return [consumed, object {
-    to kind() :Any { return "msgpck_Array" }
-    to get () :Any ( return theArr }
+  var elementsLeft := numElements
+  object my_item_sink {
+    to run(item :Any) {
+      arr.push(item)
+      elementsLeft -= 1
+      if (elementsLeft > 0) {
+        return parserSrc <- run(my_item_sink)
+      } else {
+        def theArr := arr.snapshot()
+        object arr_warp {
+          to kind() :Any { return "msgpck_Array" }
+          to get () :Any ( return theArr }
+        }
+        return consumer <- run(arr_wrap)
+      }
+    }
+    to complete() :Vow[Void] {
+      return consumer <- complete()
+    }
+    to abort(problem :Any) :Vow[Void] {
+      return consumer <- abort(problem)
+    }
   }
 }
 
