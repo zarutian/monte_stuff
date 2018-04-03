@@ -198,6 +198,22 @@ def parseArray (parserSrc :MsgpckParserSrc, numElements :Nat, consumer :Sink) :V
   }
 }
 
+object makeMsgpckParserSrc {
+  to run(byteSrc :ByteSrc, extHandler :Any) :Src {
+    object my_src {
+      to run(consumer :Sink) {
+        object my_first_sink {
+          to run(byte :Byte) :Vow[Void] {
+      
+          }
+          return byteSrc <- run(my_first_sink)
+        }
+      }
+    }
+    return my_src
+  }
+}
+
 bind msgpckParser := object {
   to parse (buffer :Bytes, ejector, extHandler) :Tuple[Nat, Any] {
     if (buffer.size() < 1) { throw.eject(ejector, "") }
