@@ -225,6 +225,34 @@ object makeMsgpckParserSrc {
                     # nil
                     return consumer <- run(makeNil())
                   }
+                  match ==0xC1 {
+                    # never used
+                    return consumer <- abort("came across a type value of 0xC1")
+                  }
+                  match ==0xC2 {
+                    # false
+                    return consumer <- run(makeBool(false))
+                  }
+                  match ==0xC3 {
+                    # true
+                    return consumer <- run(makeBool(true))
+                  }
+                  match ==0xC4 {
+                    # bin 8
+                    object my_bin_8_sink {
+                      to run(baeti :Byte) :Vow[Void] {
+                        def numberOfBytes := baeti.asInteger()
+                        return parseBin(byteSrc, numberOfBytes, consumer)
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return byteSrc <- run(my_bin_8_sink)
+                  }
                 }
               }
             }
