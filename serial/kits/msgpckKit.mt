@@ -336,6 +336,22 @@ object makeMsgpckParserSrc {
                     }
                     return ext_len_src <- run(my_ext_32_sink)
                   }
+                  match ==0xCA {
+                    # float32
+                    def bytes_src := makeBytesBufferSrc(byteSrc, 4)
+                    object my_float32_sink {
+                      to run(bytes :Bytes[4]) :Vow[Void] {
+                        return consumer <- run(makeFloat32(bytes))
+                      }
+                      to complete() :Vow[Void] {
+                        return consumer <- complete()
+                      }
+                      to abort(problem :Any) :Vow[Void] {
+                        return consumer <- abort(problem)
+                      }
+                    }
+                    return bytes_src <- run(my_float32_sink)
+                  }
                 }
               }
             }
