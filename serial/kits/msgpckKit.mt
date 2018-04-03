@@ -5,6 +5,8 @@ exports(msgpckKit)
 
 def msgpckParser
 
+# marker
+
 def makeInteger (bytes) :Any {
   return object {
     to kind () :Any { return "msgpck_Integer" }
