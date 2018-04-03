@@ -1,6 +1,23 @@
 import "guards" =~ [ => Tuple, => Nat]
 exports(msgpckKit)
 
+# utility streamcaps that might be moved elsewhere.
+
+object makeBytesBufferSrc {
+  to run (src :ByteSrc, numOfBytesWanted :Nat) :Tuple[Sink, Source] {
+    var count := numOfBytesWanted
+    var buffer := [].diverge()
+    
+    object my_src {
+    
+    }
+    object my_sink {
+    
+    }
+    return [my_sink, my_src]
+  }
+}
+
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
 def msgpckParser
@@ -25,7 +42,7 @@ def makeBool(boolean) :Any {
     to get ()  :Any { return boolean }
   }
 }
-def parseString(bufferIn :Bytes, numBytes :Nat, ejector) :Tuple[Nat, Any] {
+def parseString(bufferIn :BytesSrc, numBytes :Nat, ejector) :Vow[Any] {
   if (bufferIn.size() < numBytes) { throw.eject(ejector, "") }
   def str := UTF8.decode(bufferIn)
   return [numBytes, object {
