@@ -202,7 +202,7 @@ object makeMsgpckParserSrc {
   to run(byteSrc :ByteSrc, extHandler :Any) :Src {
     object my_src {
       to run(consumer :Sink) {
-        object my_first_sink {
+        object my_sink {
           to run(byte :Byte) :Vow[Void] {
             if ((byte & 0x80) == 0x00) {
               # positive fixint
@@ -210,6 +210,12 @@ object makeMsgpckParserSrc {
             } elseif ((byte & 0xE0) == 0xE0) {
               # negative fixint
               return consumer <- run(makeInteger((byte & 0x1f).negate()))
+            } else {
+              if ((byte & 0xF0) == 0x80) {
+                # fixmap
+                def numberOfElements := (byte & 0x0F).asIntger()
+                return parseMap(my_src, numberOfElements, consumer)
+              }
             }
           }
         }
