@@ -708,12 +708,19 @@ object msgpckKit {
         }
         match ==1 {
           # ibid
-          def [consumed_i, ibidnr] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_i == 0) { throw.throw(ejector, "zero sized ibidnr!") }
-          if (ibidnr.kind() != "msgpck_uint") { throw.throw(ejector, "ibidnr is not an uint!") }
-          buffer := buffer.slice(consumed_i, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only one thing should be inside of an ibid") }
-          return ibids[ibidnr]
+          object my_ibid_sink {
+            to run(ibidnr :Msgpck["uint"]) :Vow[Void] {
+              return consumer <- run(ibids[ibidnr])
+            }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }
+          }
+          return parserSrc <- run(my_ibid_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only one thing should be inside of an ibid") }
         }
         match ==2 {
           # DeliverOnly
