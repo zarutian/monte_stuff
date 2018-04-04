@@ -62,8 +62,6 @@ object makeByteSrcFromBuffer {
 
 # see ebnf.txt at https://gist.github.com/zarutian/fb21d0a8c910ab255401
 
-def msgpckParser
-
 
 def makeInteger (bytes) :Any {
   return object {
@@ -668,26 +666,45 @@ object makeMsgpckParserSrc {
 }
 
 object msgpckKit {
-  to recognize(bytesProducer) {
-    var buffer := b``
+  to recognize(bytesSrc) {
+    
     def ibids  := [].asMap().diverge()
-    def extHandler (extNr :Integer, bufferIn :Bytes, ejector) {
-      var buffer := bufferIn
+    def extHandler (extNr :Integer, bufferIn :Bytes, consumer :Sink) :Vow[Void] {
+      def byte_src := makeByteSrcFromBuffer(bufferIn)
+      def parserSrc := makeMsgpckParserSrc(byte_src, extHandler)
       switch (extNr) {
         match ==0 {
           # letrc
-          def [consumed_i, ibidnr] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_i == 0) { throw.throw(ejector, "zero sized ibidnr!") }
-          if (ibidnr.kind() != "msgpck_uint") { throw.throw(ejector, "ibidnr is not an uint!") }
-          if (ibids[ibidnr] != null) { throw.throw(ejector, "ibidnr already in use!") }
-          buffer := buffer.slice(consumed_i, buffer.size())
-          def [promise, resolver] := Ref.promise()
-          ibids[ibidnr] := promise
-          def [consumed_a, item] := msgpckParser.parse(buffer. ejector, extHandler)]
-          resolver.resolve(item)
-          buffer := buffer.slice(consumed_a, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only two things should be inside of an letrc") }
-          return item
+          object my_letrc_first_sink {
+            to run(ibidnr :Msgpck["uint"]) {
+              if (ibids[ibidnr] != null) {
+                return consumer <- abort("ibidnr already in use!")
+              } else {
+                def [promise, resolver] := Ref.promise()
+                ibids[ibidnr] := promise
+                object my_letrc_second_sink {
+                  to run(item :Any) {
+                    resolver.resolve(item)
+                    return consumer <- run(item)
+                  }
+                  to complete() :Vow[Void] {
+                    # TBD
+                  }
+                  to abort(problem :Any) :Vow[Void]
+                }
+                return parserSrc <- run(my_letrc_second_sink)
+              }
+            }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }
+          }
+          return parserSrc <- run(my_letrc_first_sink)
+          # if (consumed_i == 0) { throw.throw(ejector, "zero sized ibidnr!") }
+          # if (buffer.size() != 0) { throw.throw(ejector, "only two things should be inside of an letrc") }
         }
         match ==1 {
           # ibid
