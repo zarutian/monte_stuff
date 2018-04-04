@@ -880,16 +880,17 @@ object msgpckKit {
         }
         match ==5 {
           # GCAnswer
-          def [consumed_ap, answer_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_ap == 0) { throw.throw(ejector, "zero sized answer pos!") }
-          if (answer_pos.kind() != "msgpck_uint") { throw.throw(ejector, "answer pos is not a number!") }
-          buffer := buffer.slice(consumed_ap, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a GCAnswer!") }
-          def GCAnswer := [answer_pos]
-          return object {
-            to kind () :Any { return "GCAnswer" }
-            to get ()  :Any { return GCAnswer }
+          object my_GCAnswer_answerPos_sink {
+            to run(answer_pos :Msgpck["uint"]) :Vow[Void] {
+              def GCAnswer := [answer_pos]
+              return consumer <- run(object {
+                to kind () :Any { return "GCAnswer" }
+                to get ()  :Any { return GCAnswer }
+              })
+            }
           }
+          return parserSrc <- run(my_GCAnswer_answerPos_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a GCAnswer!") }
         }
         match ==6 {
           # Shutdown
