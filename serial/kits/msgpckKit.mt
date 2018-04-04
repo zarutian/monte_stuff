@@ -55,6 +55,9 @@ object makeByteSrcFromBuffer {
           return consumer <- complete()
         }
       }
+      to leftover() :Bool {
+        return (index < buffer.size()
+      }
     }
     return my_src
   }
@@ -724,31 +727,59 @@ object msgpckKit {
         }
         match ==2 {
           # DeliverOnly
-          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
-          buffer := buffer.slice(consumed_rec, buffer.size())
-          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
-          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
-          buffer := buffer.slice(consumed_ver, buffer.size())
-          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
-          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
-          buffer := buffer.slice(consumed_arg, buffer.size())
-          var kwargs := null
-          var consumed_kwa := 0
-          if (buffer.size() > 0) {
-            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
-            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
-            buffer := buffer.slice(consumed_kwa, buffer.size())
-          } else {
-            kwargs := [].asMap()
+          object my_DeliverOnly_first_sink {
+            to run(recipiant :Any) {
+              object my_DeliverOnly_second_sink {
+                to run(verb :Msgpck["utf8Str"]) :Vow[Void] {
+                  object my_DeliverOnly_third_sink {
+                    to run(args :Msgpck["array"]) :Vow[Void] {
+                      object my_DeliverOnly_done {
+                        to run(kwargs :Any[Msgpck["map"], Any]) :Vow[Void] {
+                          def DeliverOnly := [recipiant, verb, args, kwargs]
+                          return consumer <- run(object {
+                            to kind () :Any { return "DeliverOnly" }
+                            to get ()  :Any { return DeliverOnly }
+                          })
+                        }
+                        to complete() :Vow[Void] {
+                          # TBD
+                        }
+                        to abort(problem :Any) :Vow[Void] {
+                          return consumer <- abort(problem)
+                        }
+                      }
+                      if (parserSrc.leftover()) {
+                        return parserSrc <- run(my_DeliverOnly_done)
+                      } else {
+                        return my_DeliverOnly_done(msgpck_empty_map)
+                      }
+                    }
+                    to complete() :Vow[Void] {
+                      # TBD
+                    }
+                    to abort(problem :Any) :Vow[Void] {
+                      return consumer <- abort(problem)
+                    }
+                  }
+                  return parserSrc <- run(my_DeliverOnly_third_sink)
+                }
+                to complete() :Vow[Void] {
+                  # TBD
+                }
+                to abort(problem :Any) :Vow[Void] {
+                  return consumer <- abort(problem)
+                }
+              }
+              return parserSrc <- run(my_DeliverOnly_second_sink)
+            }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }            
           }
-          def DeliverOnly := [recipiant, verb, args, kwargs]
-          return object {
-            to kind () :Any { return "DeliverOnly" }
-            to get ()  :Any { return DeliverOnly }
-          }
+          return parserSrc <- run(my_DeliverOnly_first_sink)
         }
         match ==3 {
           # Deliver
