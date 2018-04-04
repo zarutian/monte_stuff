@@ -783,39 +783,75 @@ object msgpckKit {
         }
         match ==3 {
           # Deliver
-          def [consumed_ap, answer_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_ap == 0) { throw.throw(ejector, "zero sized answer position!") }
-          if (answer_pos.kind() != "msgpck_uint") { throw.throw(ejector, "answer pos is not an uint!") }
-          buffer := buffer.slice(consumed_ap, buffer.size())
-          def [consumed_rdr, rdr] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_rdr == 0) { throw.throw(ejector, "zero sized redirector!") }
-          buffer := buffer.slice(consumed_rdr, buffer.size())
-          # Rest is nearly copy pasta from the DeliverOnly case
-          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
-          buffer := buffer.slice(consumed_rec, buffer.size())
-          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
-          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
-          buffer := buffer.slice(consumed_ver, buffer.size())
-          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
-          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
-          buffer := buffer.slice(consumed_arg, buffer.size())
-          var kwargs := null
-          var consumed_kwa := 0
-          if (buffer.size() > 0) {
-            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
-            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
-            buffer := buffer.slice(consumed_kwa, buffer.size())
-          } else {
-            kwargs := [].asMap()
+          object my_Deliver_answerPos_sink {
+            to run(answer_pos :Msgpck["uint"]) :Vow[Void] {
+              object my_Deliver_rdr_sink {
+                to run(rdr :Any) :Vow[Void] {
+                  object my_Deliver_recipiant_sink {
+                    to run(recipiant :Any) :Vow[Void] {
+                      object my_Deliver_verb_sink {
+                        to run(verb :Msgpck["utf8Str"]) :Vow[Void] {
+                          object my_Deliver_args_sink {
+                            to run (args :Msgpck["array"]) :Vow[Void] {
+                              object my_Deliver_done {
+                                to run (kwargs :Any[Msgpck["map"], Any]) :Vow[Void] {
+                                  def Deliver := [answer_pos, rdr, recipiant, verb, args, kwargs]
+                                  return consumer <- run(object {
+                                    to kind () :Any { return "Deliver" }
+                                    to get ()  :Any { return Deliver }
+                                  })
+                                }
+                                to complete() :Vow[Void] {
+                                  # TBD
+                                }
+                                to abort(problem :Any) :Vow[Void] {
+                                  return consumer <- abort(problem)
+                                }
+                              }
+                              if (parserSrc.leftover()) {
+                                return parserSrc <- run(my_Deliver_done)
+                              } else {
+                                return my_Deliver_done(msgpck_empty_map)
+                              }
+                            }
+                          }
+                          return parserSrc <- run(my_Deliver_args_sink)
+                        }
+                        to complete() :Vow[Void] {
+                          # TBD
+                        }
+                        to abort(problem :Any) :Vow[Void] {
+                          return consumer <- abort(problem)
+                        }
+                      }
+                      return parserSrc <- run(my_Deliver_verb_sink)
+                    }
+                    to complete() :Vow[Void] {
+                      # TBD
+                    }
+                    to abort(problem :Any) :Vow[Void] {
+                      return consumer <- abort(problem)
+                    }
+                  }
+                  return parserSrc <- run(my_Deliver_recipiant_sink)
+                }
+                to complete() :Vow[Void] {
+                  # TBD
+                }
+                to abort(problem :Any) :Vow[Void] {
+                  return consumer <- abort(problem)
+                }
+              }
+              return parserSrc <- run(my_Deliver_rdr_sink)
+            }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }
           }
-          def Deliver := [answer_pos, rdr, recipiant, verb, args, kwargs]
-          return object {
-            to kind () :Any { return "Deliver" }
-            to get ()  :Any { return Deliver }
-          }
+          return parserSrc <- run(my_Deliver_answerPos_sink)
         }
         match ==4 {
           # GCExport
