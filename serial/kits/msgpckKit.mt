@@ -888,34 +888,56 @@ object msgpckKit {
                 to get ()  :Any { return GCAnswer }
               })
             }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }
           }
           return parserSrc <- run(my_GCAnswer_answerPos_sink)
           # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a GCAnswer!") }
         }
         match ==6 {
           # Shutdown
-          def [consumed_rc, recieved_count] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_rc == 0) { throw.throw(ejector, "zero sized recieved count!") }
-          if (recieved_count.kind() != "msgpck_uint") { throw.throw(ejector, "recieved count is not a number!") }
-          buffer := buffer.slice(consumed_rc, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a Shutdown!") }
-          def Shutdown := [recieved_count]
-          return object {
-            to kind () :Any { return "Shutdown" }
-            to get ()  :Any { return Shutdown }
+          object my_Shutdown_sink {
+            to run(recieved_count :Msgpck["uint"]) :Vow[Void] {
+              def Shutdown := [recieved_count]
+              return consumer <- run(object {
+                to kind () :Any { return "Shutdown" }
+                to get ()  :Any { return Shutdown }
+              }
+            }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }
+
           }
+          return parserSrc <- run(my_Shutdown_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a Shutdown!") }
         }
         match ==7 {
           # Terminated
-          def [consumed_prob, problem] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_prob == 0) { throw.throw(ejector, "zero sized problem!") }
-          buffer := buffer.slice(consumed_prob, buffer.size())
-          if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in a Terminated!") }
-          def Terminated := [problem]
-          return object {
-            to kind () :Any { return "Terminated" }
-            to get ()  :Any { return Terminated }
+          object my_Terminated_sink {
+            to run(problemo :Any) :Vow[Void] {
+              def Terminated := [problemo]
+              return consumer <- run(object {
+                to kind () :Any { return "Terminated" }
+                to get ()  :Any { return Terminated }
+              })
+            }
+            to complete() :Vow[Void] {
+              # TBD
+            }
+            to abort(problem :Any) :Vow[Void] {
+              return consumer <- abort(problem)
+            }
           }
+          return parserSrc <- run(my_Terminated_sink)
+          # if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in a Terminated!") }
         }
         match ==8 {
           # Export
