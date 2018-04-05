@@ -996,6 +996,39 @@ object msgpckKit {
         }
         match ==15 {
           # RemoteDeliver
+          var recipiant :Any
+          var verb      :Msgpck["utf8Str"]
+          var args      :Msgpck["array"]
+          var kwargs    :Msgpck["map"]
+          object my_RemoteDeliver_done {
+            to run(kwargs_in) :Vow[Void] {
+              kwargs := kwargs_in
+              def RemoteDeliver := [recipiant, verb, args, kwargs]
+              return consumer <- run(object {
+                to kind () :Any { return "RemoteDeliver" }
+                to get ()  :Any { return RemoteDeliver }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                              
+          }
+          object my_RemoteDeliver_rva_sink {
+            to run(items) :Vow[Void] {
+              recipiant := items[0]
+              verb      := items[1]
+              args      := items[2]
+              if (byteSrc.leftover()) {
+                return parserSrc <- run(my_RemoteDeliver_done)
+              } else {
+                return my_RemoteDeliver_done(msgpck_empty_map)
+              }
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                              
+          }
+          def rva_buff := makeBufferSrc(parseSrc, 3)
+          return rva_buff <- run (my_RemoteDeliver_rva_sink)
+          
           def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
           if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
           buffer := buffer.slice(consumed_rec, buffer.size())
@@ -1015,11 +1048,6 @@ object msgpckKit {
             buffer := buffer.slice(consumed_kwa, buffer.size())
           } else {
             kwargs := [].asMap()
-          }
-          def RemoteDeliver := [recipiant, verb, args, kwargs]
-          return object {
-            to kind () :Any { return "RemoteDeliver" }
-            to get ()  :Any { return RemoteDeliver }
           }
         }
         match ==16 {
