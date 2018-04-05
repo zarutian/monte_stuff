@@ -1028,55 +1028,41 @@ object msgpckKit {
           }
           def rva_buff := makeBufferSrc(parseSrc, 3)
           return rva_buff <- run (my_RemoteDeliver_rva_sink)
-          
-          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
-          buffer := buffer.slice(consumed_rec, buffer.size())
-          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
-          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
-          buffer := buffer.slice(consumed_ver, buffer.size())
-          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
-          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
-          buffer := buffer.slice(consumed_arg, buffer.size())
-          var kwargs := null
-          var consumed_kwa := 0
-          if (buffer.size() > 0) {
-            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
-            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
-            buffer := buffer.slice(consumed_kwa, buffer.size())
-          } else {
-            kwargs := [].asMap()
-          }
         }
         match ==16 {
           # RemoteCall
-          def [consumed_rec, recipiant] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_rec == 0) { throw.throw(ejector, "zero sized recipiant!") }
-          buffer := buffer.slice(consumed_rec, buffer.size())
-          def [consumed_ver, verb] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_ver == 0) { throw.throw(ejector, "zero sized verb!") }
-          if  (verb.kind() != "msgpck_utf8Str") { throw.throw(ejector, "verb is not a string!") }
-          buffer := buffer.slice(consumed_ver, buffer.size())
-          def [consumed_arg, args] := msgpckParser.parse(buffer, ejector, extHandler)
-          if  (consumed_arg == 0) { throw.throw(ejector, "zero sized args!") }
-          if  (args.kind() != "msgpck_Array") { throw.throw(ejector, "args is not an array!") }
-          buffer := buffer.slice(consumed_arg, buffer.size())
-          var kwargs := null
-          var consumed_kwa := 0
-          if (buffer.size() > 0) {
-            [consumed_kwa, kwargs] := msgpckParser.parse(buffer, ejector, extHandler)
-            if (kwargs.kind() != "msgpck_Map") { throw.throw(ejector, "kwargs is not an map!") }
-            buffer := buffer.slice(consumed_kwa, buffer.size())
-          } else {
-            kwargs := [].asMap()
+          var recipiant :Any
+          var verb      :Msgpck["utf8Str"]
+          var args      :Msgpck["array"]
+          var kwargs    :Msgpck["map"]
+          object my_RemoteCall_done {
+            to run(kwargs_in) :Vow[Void] {
+              kwargs := kwargs_in
+              def RemoteCall := [recipiant, verb, args, kwargs]
+              return consumer <- run(object {
+                to kind () :Any { return "RemoteCall" }
+                to get ()  :Any { return RemoteCall }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                              
           }
-          def RemoteCall := [recipiant, verb, args, kwargs]
-          return object {
-            to kind () :Any { return "RemoteCall" }
-            to get ()  :Any { return RemoteCall }
+          object my_RemoteCall_rva_sink {
+            to run(items) :Vow[Void] {
+              recipiant := items[0]
+              verb      := items[1]
+              args      := items[2]
+              if (byteSrc.leftover()) {
+                return parserSrc <- run(my_RemoteCall_done)
+              } else {
+                return my_RemoteCall_done(msgpck_empty_map)
+              }
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                              
           }
+          def rva_buff := makeBufferSrc(parseSrc, 3)
+          return rva_buff <- run (my_RemoteCall_rva_sink)
         }
         match ==17 {
           # LocatorUnumDesc
