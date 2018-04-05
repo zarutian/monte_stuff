@@ -1129,23 +1129,41 @@ object msgpckKit {
         }
         match ==20 {
           # ActiveCapCert
-          throw.throw(ejector, "reserved for ActiveCapCert")
+          return consumer <- run (object {
+            to kind() :Any { return "ActiveCapCert" }
+            to get() :Any  { return [bufferIn] }
+          })
         }
         match ==21 {
           # PostalRefACC
-          throw.throw(ejector, "reserved for PostalRefs that use ActiveCapCerts as carrier")
+          # PostalRefs that use ActiveCapCerts as carrier
+          return consumer <- run (object {
+            to kind() :Any { return "PostalRefACC" }
+            to get() :Any  { return [bufferIn] }
+          })
         }
         match ==22 {
           # Macaroony
-          throw.throw(ejector, "reserved for Macaroons or Macaroonesque things")
+          # Macaroons or Macaroonesque things
+          return consumer <- run (object {
+            to kind() :Any { return "Macaroony" }
+            to get() :Any  { return [bufferIn] }
+          })
         }
         match ==23 {
           # PostalRefM
-          throw.throw(ejector, "reserved for PostalRefs that use Macaroons or Macaroonesque things as carrier")
+          # PostalRefs that use Macaroons or Macaroonesque things as carrier
+          return consumer <- run (object {
+            to kind() :Any { return "PostalRefM" }
+            to get() :Any  { return [bufferIn] }
+          })
         }
         match ==24 {
           # crypto hash (Blake2b)
-          throw.throw(ejector, "reserved for Blake2b cryptographic hashes")
+          return consumer <- run (object {
+            to kind() :Any { return "Blake2b_cryptohash" }
+            to get() :Any  { return [bufferIn] }
+          })
         }
       }      
     }
