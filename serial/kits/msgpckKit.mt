@@ -807,27 +807,23 @@ object msgpckKit {
         }
         match ==4 {
           # GCExport
-          object my_GCExport_exportPos_sink {
-            to run(export_pos :Msgpck["uint"]) :Vow[Void] {
-              object my_GCExport_wireDelta_sink {
-                to run(wireDelta :Msgpck["uint"]) :Vow[Void] {
-                  def GCExport := [export_pos, wireDelta]
-                  return consumer <- run(object {
-                    to kind () :Any { return "GCExport" }
-                    to get ()  :Any { return GCExport }
-                  })
-                }
-                to complete() :Vow[Void] {
-                  # TBD
-                }
-                to abort(problem :Any) :Vow[Void] {
-                  return consumer <- abort(problem)
-                }
-              }
-              return parserSrc <- run(my_GCExport_wireDelta_sink)
+          var export_pos :Msgpck["uint"]
+          var wireDelta  :Msgpck["uint"]
+          object my_GCExport_exportPos_wireDelta_sink {
+            to run(items) :Vow[Void] {
+              export_pos := items[0]
+              wireDelta  := items[1]
+              def GCExport := [export_pos, wireDelta]
+              return consumer <- run(object {
+                to kind () :Any { return "GCExport" }
+                to get ()  :Any { return GCExport }
+              })
             }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
-          return parserSrc <- run(my_GCExport_exportPos_sink)
+          def ew_buff := makeBufferSrc(parserSrc, 2)
+          return ew_buff <- run(my_GCExport_exportPost_wireDelta_sink)
           # if (buffer.size() != 0) { throw.throw(ejector, "only two things should be in a GCExport!") }
         }
         match ==5 {
@@ -840,12 +836,8 @@ object msgpckKit {
                 to get ()  :Any { return GCAnswer }
               })
             }
-            to complete() :Vow[Void] {
-              # TBD
-            }
-            to abort(problem :Any) :Vow[Void] {
-              return consumer <- abort(problem)
-            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
           return parserSrc <- run(my_GCAnswer_answerPos_sink)
           # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a GCAnswer!") }
@@ -860,13 +852,8 @@ object msgpckKit {
                 to get ()  :Any { return Shutdown }
               }
             }
-            to complete() :Vow[Void] {
-              # TBD
-            }
-            to abort(problem :Any) :Vow[Void] {
-              return consumer <- abort(problem)
-            }
-
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
           return parserSrc <- run(my_Shutdown_sink)
           # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in a Shutdown!") }
@@ -881,41 +868,43 @@ object msgpckKit {
                 to get ()  :Any { return Terminated }
               })
             }
-            to complete() :Vow[Void] {
-              # TBD
-            }
-            to abort(problem :Any) :Vow[Void] {
-              return consumer <- abort(problem)
-            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
           return parserSrc <- run(my_Terminated_sink)
           # if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in a Terminated!") }
         }
         match ==8 {
           # Export
-          def [consumed_export, export_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_export == 0) { throw.throw(ejector, "zero sized export pos!") }
-          if (export_pos.kind() != "msgpck_uint") { throw.throw(ejector, "export pos is not a number!") }
-          buffer := buffer.slice(consumed_export, buffer.size())
-          if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in an Export!") }
-          def Exported := [export_pos]
-          return object {
-            to kind () :Any { return "Export" }
-            to get ()  :Any { return Exported }
+          object my_Export_sink {
+            to run(export_pos :Msgpck["uint"]) :Vow[Void] {
+              def Exported := [export_pos]
+              return consumer <- run(object {
+                to kind () :Any { return "Export" }
+                to get ()  :Any { return Exported }
+              })              
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
+          return parserSrc <- run(my_Export_sink)
+          # if (buffer.size() != 0) {  throw.throw(ejector, "only on thing should be in an Export!") }
         }
         match ==9 {
           # Answer
-          def [consumed_ap, answer_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_ap == 0) { throw.throw(ejector, "zero sized answer pos!") }
-          if (answer_pos.kind() != "msgpck_uint") { throw.throw(ejector, "answer pos is not a number!") }
-          buffer := buffer.slice(consumed_ap, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Answer!") }
-          def Answer := [answer_pos]
-          return object {
-            to kind () :Any { return "Answer" }
-            to get ()  :Any { return Answer }
+          object my_Answer_sink {
+            to run(answer_pos :Msgpck["uint"]} {
+             def Answer := [answer_pos]
+             return consumer <- run(object {
+               to kind () :Any { return "Answer" }
+               to get ()  :Any { return Answer }
+             })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
+          return parserSrc <- run(my_Answer_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Answer!") }
         }
         match ==10 {
           # Import
