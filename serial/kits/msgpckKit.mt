@@ -1114,11 +1114,18 @@ object msgpckKit {
         }
         match ==19 {
           # crypto hash. (SHA256)
-          if (buffer.size() != 32) { throw.throw(ejector, "bytes inside an SHA256 cryptohash mush be 32") }
-          return object {
-            to kind () :Any { return "Sha256_cryptohash" }
-            to get ()  :Any { return bytes }
+          object my_hash_sink {
+            to run(bytes :Bytes[32]) :Vow[Void] {
+              return consumer <- run(object {
+                to kind () :Any { return "Sha256_cryptohash" }
+                to get ()  :Any { return bytes }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }          
           }
+          def hash_buff := makeBufferSrc(byteSrc, 32)
+          return hash_buff <- run(my_hash_sink)
         }
         match ==20 {
           # ActiveCapCert
