@@ -928,27 +928,24 @@ object msgpckKit {
         }
         match ==12 {
           # newFarDesc
-          def [consumed_imp, import_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_imp == 0) { throw.throw(ejector, "zero sized import pos!") }
-          if (import_pos.kind() != "msgpck_uint") { throw.throw(ejector, "import pos is not a number!") }
-          buffer := buffer.slice(consumed_imp, buffer.size())
-          # this could be optional, havent updated the spec though
-          def [consumed_hash, hash] := msgpckParser.parse(buffer, ejector, extHandler)
-          var SwissHash :Any
-          if (consumed_hash > 0) {
-            if (hash.kind() != "Sha256_cryptohash") { throw.throw(ejector, "incorrect kind of swissHash") }
-            # todo: update this later with other cryptohash algorithms.
-            SwissHash := hash
-            buffer := buffer.slice(consumed_hash, buffer.size())
-          } else {
-            SwissHash := null
+          var import_pos :Msgpck["uint"]
+          var swissHash :Msgpck["Sha256_cryptohash"] # this could be optional, havent updated the spec though
+          object my_newFarDesc_importPos_hash_sink {
+            to run(items) :Vow[Void] {
+              import_pos := items[0]
+              swissHash  := items[1]
+              def newFarDesc := [import_pos, swissHash]
+              return consumer <- run(object {
+                to kind () :Any { return "newFarDesc" }
+                to get ()  :Any { return newFarDesc }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }          
           }
-          if (buffer.size() != 0) { throw.throw(ejector, "only one or two things should be in a newFarDesc!") }
-          def newFarDesc := [import_pos, SwissHash]
-          return object {
-            to kind () :Any { return "newFarDesc" }
-            to get ()  :Any { return newFarDesc }
-          }
+          def ih_buff := makeBufferSrc(parserSrc, 2)
+          return ih_buff <- run(my_newFarDesc_importPost_hash_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only one or two things should be in a newFarDesc!") }
         }
         match ==13 {
           # newRemotePromiseDesc
