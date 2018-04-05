@@ -881,7 +881,7 @@ object msgpckKit {
         match ==9 {
           # Answer
           object my_Answer_sink {
-            to run(answer_pos :Msgpck["uint"]} {
+            to run(answer_pos :Msgpck["uint"]) :Vow[Void] {
              def Answer := [answer_pos]
              return consumer <- run(object {
                to kind () :Any { return "Answer" }
@@ -897,7 +897,7 @@ object msgpckKit {
         match ==10 {
           # Import
           object my_Import_sink {
-            to run(import_pos :Msgpck["uint"]} {
+            to run(import_pos :Msgpck["uint"]) :Vow[Void] {
               def Imported := [import_pos]
               return consumer <- run (object {
                 to kind () :Any { return "Import" }
@@ -912,16 +912,19 @@ object msgpckKit {
         }
         match ==11 {
           # Question
-          def [consumed_que, question_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_que == 0) { throw.throw(ejector, "zero sized question pos!") }
-          if (question_pos.kind() != "msgpck_uint") { throw.throw(ejector, "question pos is not a number!") }
-          buffer := buffer.slice(consumed_que, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Question!") }
-          def Question := [question_pos]
-          return object {
-            to kind () :Any { return "Question" }
-            to get ()  :Any { return Question }
+          object my_Question_sink {
+            to run (question_pos :Msgpck["uint"]) :Vow[Void] {
+              def Question := [question_pos]
+              return consumer <- run (object {
+                to kind () :Any { return "Question" }
+                to get ()  :Any { return Question }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }          
           }
+          return parserSrc <- run(my_Question_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Question!") }
         }
         match ==12 {
           # newFarDesc
