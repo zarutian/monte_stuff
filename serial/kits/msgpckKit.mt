@@ -684,34 +684,26 @@ object msgpckKit {
       switch (extNr) {
         match ==0 {
           # letrc
-          object my_letrc_first_sink {
-            to run(ibidnr :Msgpck["uint"]) {
+          var ibidnr :Msgpck(uint)
+          var item   :Any
+          object my_letrc_ibid_item_sink {
+            to run(items) :Vow[Void] {
+              ibidnr := items[0]
+              item   := items[1]
               if (ibids[ibidnr] != null) {
                 return consumer <- abort("ibidnr already in use!")
               } else {
                 def [promise, resolver] := Ref.promise()
                 ibids[ibidnr] := promise
-                object my_letrc_second_sink {
-                  to run(item :Any) {
-                    resolver.resolve(item)
-                    return consumer <- run(item)
-                  }
-                  to complete() :Vow[Void] {
-                    # TBD
-                  }
-                  to abort(problem :Any) :Vow[Void]
-                }
-                return parserSrc <- run(my_letrc_second_sink)
+                resolver.resolve(item)
+                return consumer <- run(item)
               }
             }
-            to complete() :Vow[Void] {
-              # TBD
-            }
-            to abort(problem :Any) :Vow[Void] {
-              return consumer <- abort(problem)
-            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
-          return parserSrc <- run(my_letrc_first_sink)
+          def ii_buff := makeBufferSrc(parserSrc, 2)
+          return ii_buff <- run(my_letrc_ibid_item_sink)
           # if (consumed_i == 0) { throw.throw(ejector, "zero sized ibidnr!") }
           # if (buffer.size() != 0) { throw.throw(ejector, "only two things should be inside of an letrc") }
         }
@@ -721,12 +713,8 @@ object msgpckKit {
             to run(ibidnr :Msgpck["uint"]) :Vow[Void] {
               return consumer <- run(ibids[ibidnr])
             }
-            to complete() :Vow[Void] {
-              # TBD
-            }
-            to abort(problem :Any) :Vow[Void] {
-              return consumer <- abort(problem)
-            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
           }
           return parserSrc <- run(my_ibid_sink)
           # if (buffer.size() != 0) { throw.throw(ejector, "only one thing should be inside of an ibid") }
