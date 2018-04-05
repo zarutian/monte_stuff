@@ -972,29 +972,27 @@ object msgpckKit {
         }
         match ==14 {
           # newPromise3Desc
-          def [consumed_sp, searchPath] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_sp == 0) { throw.throw(ejector, "zero sized search path! (should be at least be an empty array)") }
-          if (searchPath.kind() != "msgpck_Array") { throw.throw(ejector, "search path must be an array!") }
-          buffer := buffer.slice(consumed_sp, buffer.size())
-          def [consumed_hostId, hostId] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_hostId == 0) { throw.throw(ejector, "zero sized host VatId!") }
-          # todo: add other kinds of cryptohashes
-          if (hostId.kind() != "Sha256_cryptohash") { throw.throw(ejector, "VatID is not a Sha256 hash!") }
-          buffer := buffer.slice(consumed_hostId, buffer.size())
-          def [consumed_nonce, nonce] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_nonce == 0) { throw.throw(ejector, "zero sized nonce!") }
-          if (nonce.kind() != "msgpck_Binary") { throw.throw(ejector, "nonce is not a binary string!") }
-          buffer := buffer.slice(consumed_nonce, buffer.size())
-          def [consumed_vine, vine] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_vine == 0) { throw.throw(ejector, "zero sized vine!") }
-          # a vine can be anything.
-          buffer := buffer.slice(consumed_vine, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only four things should be in in a newPromise3Desc") }
-          def newPromise3Desc := [searchPath, hostId, nonce, vine]
-          return object {
-            to kind () :Any { return "newPromise3Desc" }
-            to get ()  :Any { return newPromise3Desc }
+          var searchPath :Msgpck["array"]
+          var hostId     :Msgpck["Sha256_cryptohash"]
+          var nonce      :Msgpck["binary"]
+          var vine       :Any    # a vine can be anything.
+          object my_newPromise3Desc_sphnv_sink {
+            to run(items) :Vow[Void] {
+              searchPath := items[0]
+              hostId     := items[1]
+              nonce      := items[2]
+              vine       := items[3]
+              def newPromise3Desc := [searchPath, hostId, nonce, vine]
+              return consumer <- run(object {
+                to kind () :Any { return "newPromise3Desc" }
+                to get ()  :Any { return newPromise3Desc }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                              
           }
+          def sphnv_buff := makeBufferSrc(parserSrc, 4)
+          return sphnv_buff <- run(my_newPromise3Desc_sphnv_sink)
         }
         match ==15 {
           # RemoteDeliver
