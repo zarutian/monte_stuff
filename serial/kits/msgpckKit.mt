@@ -896,16 +896,19 @@ object msgpckKit {
         }
         match ==10 {
           # Import
-          def [consumed_imp, import_pos] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_imp == 0) { throw.throw(ejector, "zero sized import pos!") }
-          if (import_pos.kind() != "msgpck_uint") { throw.throw(ejector, "import pos is not a number!") }
-          buffer := buffer.slice(consumed_imp, buffer.size())
-          if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Import!") }
-          def Imported := [import_pos]
-          return object {
-            to kind () :Any { return "Import" }
-            to get ()  :Any { return Imported }
-          }          
+          object my_Import_sink {
+            to run(import_pos :Msgpck["uint"]} {
+              def Imported := [import_pos]
+              return consumer <- run (object {
+                to kind () :Any { return "Import" }
+                to get ()  :Any { return Imported }
+              })
+            }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }
+          }
+          return parserSrc <- run(my_Import_sink)
+          # if (buffer.size() != 0) { throw.throw(ejector, "only on thing should be in an Import!") }
         }
         match ==11 {
           # Question
