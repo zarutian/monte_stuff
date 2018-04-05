@@ -1066,47 +1066,51 @@ object msgpckKit {
         }
         match ==17 {
           # LocatorUnumDesc
-          if (buffer.size() != 0) { throw.throw(ejector, "LocatorUnumDesc should be empty!") }
+          return consumer <- run(object {
+            to kind() :Any { return "LocatorUnumDesc" }
+            to get() :Any { return [] }
+          })
         }
         match ==18 {
           # SturdyRef
-          def [consumed_loc, locator] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_loc == 0) { throw.throw(ejector, "zero sized locator!") }
-          buffer := buffer.slice(consumed_loc, buffer.size())
-          def [consumed_sp, searchPath] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_sp == 0) { throw.throw(ejector, "zero sized search path! (should be at least be an empty array)") }
-          if (searchPath.kind() != "msgpck_Array") { throw.throw(ejector, "search path must be an array!") }
-          buffer := buffer.slice(consumed_sp, buffer.size())
-          def [consumed_hostId, hostId] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_hostId == 0) { throw.throw(ejector, "zero sized host VatId!") }
-          # todo: add other kinds of cryptohashes
-          if (hostId.kind() != "Sha256_cryptohash") { throw.throw(ejector, "VatID is not a Sha256 hash!") }
-          buffer := buffer.slice(consumed_hostId, buffer.size())
-          def [consumed_sn, swissNum] := msgpckParser.parse(buffer, ejector, extHandler)
-          if (consumed_sn == 0) { throw.throw(ejector, "zero sized swissNum!") }
-          # todo: add other kinds of cryptohashes
-          if (swissNum.kind() != "Sha256_cryptohash") { throw.throw(ejector, "swissNum is not a Sha256 hash!") }
-          buffer := buffer.slice(consumed_sn, buffer.size())
-          var expiration :Any
-          if (buffer.size() > 0) {
-            def [consumed_exp, exp] := msgpckParser.parse(buffer, ejector, extHandler)
-            buffer := buffer.slice(consumed_exp, buffer.size())
-            expiration := object {
-              to kind () :Any { return "ISO8601_Date" }
-              to get ()  :Any { return exp }
+          var locator    :Any
+          var searchPath :Msgpck["array"]
+          var hostId     :Msgpck["Sha256_cryptohash"]
+          var swissNum   :Msgpck["Sha256_cryptohash"]
+          var expiry     :Any # optional
+          object my_SturdyRef_done {
+            to run(exp) :Vow[Void] {
+              expiry := object {
+                to kind () :Any { return "ISO8601_Date" }
+                to get ()  :Any { return exp }
+              }
+              def sturdyref := [locator, searchPath, hostId, swissNum, expiry]
+              return consumer <- run(object {
+                to kind () :Any { return "SturdyRef" }
+                to get ()  :Any { return sturdyref }
+              })
             }
-          } else {
-            expiration := object {
-              to kind () :Any { return "ISO8601_Date" }
-              to get ()  :Any { return "empty" }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                                          
+          }
+          object my_SturdyRef_lshs_sink {
+            to run(items) :Vow[Void] {
+              locator    := items[0]
+              searchPath := items[1]
+              hostId     := items[2]
+              swissNum   := items[3]
+              if (byteSrc.leftover()) {
+                return parserSrc <- run(my_SturdyRef_done)
+              } else {
+                return my_SturdyRef_done("empty")
+              }
             }
+            to complete() :Vow[Void] { return consumer <- complete() }
+            to abort(problem :Any) :Vow[Void] { return consumer <- abort(problem) }                                          
           }
-          if (buffer.size() != 0) { throw.throw(ejector, "there should be three or four things in an sturdyref!") }
-          def sturdyref := [locator, searchPath, hostId, swissNum, expiration]
-          return object {
-            to kind () :Any { return "SturdyRef" }
-            to get ()  :Any { return sturdyref }
-          }
+          def lshs_buff := makeBufferSrc(parserSrc, 4)
+          return lshs_buff <- run(my_SturdyRef_lshs_sink)
+          #  if (buffer.size() != 0) { throw.throw(ejector, "there should be three or four things in an sturdyref!") }
         }
         match ==19 {
           # crypto hash. (SHA256)
